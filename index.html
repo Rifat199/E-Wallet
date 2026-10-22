@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VIP Wallet - Premium Financial Service</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Font Awesome Icons for KYC Modal -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Supabase CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container"></div>
+
+    <!-- MOBILE MENU DRAWER -->
+    <div id="mobile-menu-drawer">
+        <div class="drawer-content-scroll">
+            <div class="flex justify-between items-center border-b" style="padding-bottom: 1rem; margin-bottom: 1rem;">
+                <div class="flex items-center" style="gap: 0.75rem;">
+                    <div style="width: 2.25rem; height: 2.25rem; border-radius: 50%; background-color: #334155; display: flex; align-items: center; justify-content: center; font-weight: bold; color: #38bdf8;" id="drawer-avatar">U</div>
+                    <div>
+                        <h4 style="font-size: 0.85rem; font-weight: bold; color: white; text-transform: uppercase;" id="drawer-name">USER NAME</h4>
+                        <p style="font-size: 0.7rem; color: #94a3b8;" id="drawer-phone">01700000000</p>
+                        <p style="font-size: 0.68rem; color: #38bdf8; margin-top: 0.15rem;" id="drawer-email">demo@vipwallet.com</p>
+                    </div>
+                </div>
+                <button onclick="toggleMobileMenu()" style="background: none; color: #94a3b8; font-size: 1.25rem;">✕</button>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 0.75rem; font-size: 0.8rem;">
+                <div style="background-color: #0f172a; padding: 0.6rem; border-radius: 0.75rem; border: 1px solid #334155;" class="flex justify-between items-center">
+                    <span style="color: #94a3b8; font-size: 0.7rem;">KYC Status:</span>
+                    <span id="drawer-kyc-badge" class="badge badge-amber">Pending</span>
+                </div>
+            </div>
+
+            <!-- MENU NAVIGATION BUTTONS -->
+            <div style="margin-top: 1rem; display: flex; flex-direction: column; gap: 0.5rem;">
+                <button onclick="toggleMobileMenu(); openAddMoneyModal()" style="width: 100%; padding: 0.625rem; background-color: #0f172a; color: #38bdf8; border: 1px solid #334155; border-radius: 0.5rem; font-size: 0.75rem; text-align: left; display: flex; align-items: center; gap: 0.5rem;">
+                    <span>➕ Add Money</span>
+                </button>
+                <button onclick="toggleMobileMenu(); openAddBankModal()" style="width: 100%; padding: 0.625rem; background-color: #0f172a; color: #38bdf8; border: 1px solid #334155; border-radius: 0.5rem; font-size: 0.75rem; text-align: left; display: flex; align-items: center; gap: 0.5rem;">
+                    <span>🏦 Add Bank / Account</span>
+                </button>
+                <button onclick="toggleMobileMenu(); openHistoryModal()" style="width: 100%; padding: 0.625rem; background-color: #0f172a; color: #38bdf8; border: 1px solid #334155; border-radius: 0.5rem; font-size: 0.75rem; text-align: left; display: flex; align-items: center; gap: 0.5rem;">
+                    <span>📜 Transaction History</span>
+                </button>
+                <button onclick="toggleMobileMenu(); openAddMoneyHistoryModal()" style="width: 100%; padding: 0.625rem; background-color: #0f172a; color: #34d399; border: 1px solid #334155; border-radius: 0.5rem; font-size: 0.75rem; text-align: left; display: flex; align-items: center; gap: 0.5rem;">
+                    <span>📈 Add Money History</span>
+                </button>
+                <button onclick="toggleMobileMenu(); openAddBankHistoryModal()" style="width: 100%; padding: 0.625rem; background-color: #0f172a; color: #f43f5e; border: 1px solid #334155; border-radius: 0.5rem; font-size: 0.75rem; text-align: left; display: flex; align-items: center; gap: 0.5rem;">
+                    <span>🔒 Add Bank History</span>
+                </button>
+                <button onclick="toggleMobileMenu(); openChangePasswordModal()" style="width: 100%; padding: 0.625rem; background-color: #0f172a; color: #cbd5e1; border: 1px solid #334155; border-radius: 0.5rem; font-size: 0.75rem; text-align: left;">🔑 Change Password</button>
+                
+                <button onclick="toggleMobileMenu(); openLiveSupportModal()" style="width: 100%; padding: 0.625rem; background-color: #0f172a; color: #38bdf8; border: 1px solid #334155; border-radius: 0.5rem; font-size: 0.75rem; text-align: left; display: flex; align-items: center; gap: 0.5rem;">
+                    <span>💬 Live Support & Chat</span>
+                </button>
+            </div>
+        </div>
+
+        <div class="drawer-footer-logout">
+            <button onclick="toggleMobileMenu(); handleLogout()" style="width: 100%; padding: 0.625rem; background-color: #e11d48; color: white; border-radius: 0.5rem; font-size: 0.75rem; font-weight: bold;">Logout</button>
+        </div>
+    </div>
+
+    <!-- MAIN APP WRAPPER -->
+    <div id="app-section-0" class="w-full flex flex-col" style="min-height: 100vh;">
+
+        <!-- ==================== AUTHENTICATION SECTION ==================== -->
+        <section id="auth-section-1" class="flex-1 flex items-center justify-center" style="padding: 1.5rem 1rem; margin: 1.5rem 0;">
+            <div class="card-1 w-full max-w-md glow-effect-1 relative">
+                
+                <!-- Logo & Header -->
+                <div class="text-center" style="margin-bottom: 1.75rem;">
+                    <div style="width: 4.5rem; height: 4.5rem; border-radius: 1.25rem; background: linear-gradient(135deg, #0284c7 0%, #38bdf8 100%); display: inline-flex; align-items: center; justify-content: center; color: white; margin-bottom: 0.875rem; box-shadow: 0 10px 25px -5px rgba(2, 132, 199, 0.5);">
+                        <svg class="icon" style="width: 2.25rem; height: 2.25rem;" viewBox="0 0 24 24"><path d="M21 18v1c0 1.1-.9 2-2 2H5c-1.11 0-2-.9-2-2V5c0-1.1.89-2 2-2h14c1.1 0 2 .9 2 2v1h-9c-1.11 0-2 .9-2 2v8c0 1.1.89 2 2 2h9zm-9-2h10V8H12v8zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
+                    </div>
+                    <h1 style="font-size: 1.75rem; font-weight: 800; color: #38bdf8; letter-spacing: 0.05em;">VIP Wallet</h1>
+                    <p style="font-size: 0.8rem; color: #94a3b8; margin-top: 0.3rem;">Secure & Modern Digital Payment System</p>
+                </div>
+
+                <!-- Tabs (Login / Register) -->
+                <div class="flex" style="background-color: #0f172a; padding: 0.375rem; border-radius: 0.75rem; border: 1px solid #334155; margin-bottom: 1.5rem;">
+                    <button id="login-tab-btn-2" onclick="switchAuthTab('login')" class="tab-btn-1 active">
+                        <svg class="icon" viewBox="0 0 24 24"><path d="M11 7L9.6 8.4l2.6 2.6H2v2h10.2l-2.6 2.6L11 17l5-5-5-5zm9 12h-8v2h8c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2h-8v2h8v14z"/></svg>
+                        Login
+                    </button>
+                    <button id="register-tab-btn-3" onclick="switchAuthTab('register')" class="tab-btn-1">
+                        <svg class="icon" viewBox="0 0 24 24"><path d="M15 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm-9-2V7H4v3H1v2h3v3h2v-3h3v-2H6zm9 4c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/></svg>
+                        Register
+                    </button>
+                </div>
+
+                <!-- LOGIN FORM -->
+                <form id="login-form-4" onsubmit="handleLoginSubmit(event)" style="display: flex; flex-direction: column; gap: 1.125rem;">
+                    <div>
+                        <label>Email Address</label>
+                        <div class="relative">
+                            <svg class="icon absolute" style="left: 0.875rem; top: 0.875rem; color: #64748b;" viewBox="0 0 24 24"><path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
+                            <input type="email" id="login-id-5" required placeholder="example@mail.com" class="input-icon-padding">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label>Password</label>
+                        <div class="relative">
+                            <svg class="icon absolute" style="left: 0.875rem; top: 0.875rem; color: #64748b;" viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
+                            <input type="password" id="login-password-6" required placeholder="••••••••" class="input-icon-padding input-password-padding">
+                            <button type="button" onclick="togglePasswordVisibility('login-password-6', 'eye-login')" class="absolute" style="right: 0.75rem; top: 0.75rem; background: none; color: #64748b;" title="Show/Hide">
+                                <svg id="eye-login" class="icon" viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label>Email OTP Security Code</label>
+                        <div class="flex" style="gap: 0.5rem;">
+                            <div class="relative flex-1">
+                                <svg class="icon absolute" style="left: 0.875rem; top: 0.875rem; color: #64748b;" viewBox="0 0 24 24"><path d="M12.65 10C11.83 7.67 9.61 6 7 6c-3.31 0-6 2.69-6 6s2.69 6 6 6c2.61 0 4.83-1.67 5.65-4H17v2h2v-2h2v-2H12.65zM7 14c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z"/></svg>
+                                <input type="text" id="login-otp-7" required inputmode="numeric" pattern="[0-9]{6}" minlength="6" maxlength="6" placeholder="6 digit code" class="input-icon-padding">
+                            </div>
+                            <button type="button" id="login-otp-btn-6" onclick="triggerOTP('login')" class="btn-emerald-2" style="border-radius: 0.75rem;">
+                                <svg class="icon" viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+                                <span>Send Code</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-between items-center" style="font-size: 0.75rem; color: #94a3b8; padding-top: 0.25rem;">
+                        <label class="flex items-center" style="gap: 0.5rem; cursor: pointer; margin-bottom: 0;">
+                            <input type="checkbox" style="accent-color: #0284c7;">
+                            <span>Remember Me</span>
+                        </label>
+                        <a href="javascript:void(0)" id="forgot-password-link-9" onclick="openForgotPasswordModal()" style="color: #38bdf8; text-decoration: none;">Forgot Password?</a>
+                    </div>
+
+                    <button type="submit" id="login-submit-btn-10" class="btn-accent-1" style="margin-top: 0.5rem; border-radius: 0.75rem;">
+                        <span>Access Dashboard</span>
+                        <svg class="icon" viewBox="0 0 24 24"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+                    </button>
+                </form>
+
+                <!-- REGISTER FORM -->
+                <form id="register-form-11" onsubmit="handleRegisterSubmit(event)" class="hidden" style="display: flex; flex-direction: column; gap: 1rem;">
+                    <div>
+                        <label>Full Name</label>
+                        <input type="text" id="reg-name-12" required placeholder="Enter your full name">
+                    </div>
+
+                    <div>
+                        <label>Email Address</label>
+                        <input type="email" id="reg-email-13" required placeholder="mail@example.com">
+                    </div>
+
+                    <div>
+                        <label>Phone Number (bKash/Mobile)</label>
+                        <input type="tel" id="reg-phone-14" required inputmode="numeric" pattern="[0-9]{11}" minlength="11" maxlength="11" placeholder="017XXXXXXXX (11 digits)">
+                    </div>
+
+                    <div class="grid grid-2">
+                        <div>
+                            <label>Password</label>
+                            <div class="relative">
+                                <input type="password" id="reg-password-15" required placeholder="Min 6 characters" class="input-password-padding">
+                                <button type="button" onclick="togglePasswordVisibility('reg-password-15', 'eye-reg-1')" class="absolute" style="right: 0.75rem; top: 0.75rem; background: none; color: #64748b;" title="Show/Hide">
+                                    <svg id="eye-reg-1" class="icon" viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+                                </button>
+                            </div>
+                        </div>
+                        <div>
+                            <label>Confirm Password</label>
+                            <div class="relative">
+                                <input type="password" id="reg-confirm-password-16" required placeholder="Re-enter password" class="input-password-padding">
+                                <button type="button" onclick="togglePasswordVisibility('reg-confirm-password-16', 'eye-reg-2')" class="absolute" style="right: 0.75rem; top: 0.75rem; background: none; color: #64748b;" title="Show/Hide">
+                                    <svg id="eye-reg-2" class="icon" viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label>Email Verification Code (OTP)</label>
+                        <div class="flex" style="gap: 0.5rem;">
+                            <input type="text" id="reg-otp-20" required inputmode="numeric" pattern="[0-9]{6}" minlength="6" maxlength="6" placeholder="6 digit OTP">
+                            <button type="button" id="reg-otp-btn-21" onclick="triggerOTP('register')" class="btn-emerald-2" style="border-radius: 0.75rem;">
+                                <svg class="icon" viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+                                <span>Send Code</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <button type="submit" id="reg-submit-btn-22" class="btn-accent-1" style="margin-top: 0.5rem; border-radius: 0.75rem;">
+                        <span>Complete Registration</span>
+                    </button>
+                </form>
+
+            </div>
+        </section>
+
+        <!-- ==================== DASHBOARD SECTION ==================== -->
+        <section id="dashboard-section-23" class="flex-1 flex flex-col hidden">
+            
+            <!-- TOP NAVBAR -->
+            <header id="header-section-24">
+                <div class="max-w-6xl mx-auto flex items-center justify-between">
+                    
+                    <div class="flex items-center" style="gap: 0.75rem;">
+                        <button onclick="toggleMobileMenu()" style="background: none; color: #38bdf8; padding: 0.25rem; display: flex; align-items: center; justify-content: center;" title="Menu">
+                            <svg class="icon" style="width: 1.5rem; height: 1.5rem;" viewBox="0 0 24 24"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg>
+                        </button>
+                        
+                        <div style="width: 2.25rem; height: 2.25rem; border-radius: 0.75rem; background: linear-gradient(135deg, #0284c7 0%, #38bdf8 100%); display: flex; align-items: center; justify-content: center; color: white;">
+                            <svg class="icon" style="width: 1.1rem; height: 1.1rem;" viewBox="0 0 24 24"><path d="M21 18v1c0 1.1-.9 2-2 2H5c-1.11 0-2-.9-2-2V5c0-1.1.89-2 2-2h14c1.1 0 2 .9 2 2v1h-9c-1.11 0-2 .9-2 2v8c0 1.1.89 2 2 2h9zm-9-2h10V8H12v8zm4-2.5c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5z"/></svg>
+                        </div>
+                        <div>
+                            <h2 style="font-size: 1rem; font-weight: bold; color: white; line-height: 1.2;">VIP Wallet Systems Ltd.</h2>
+                            <span id="system-status-text" style="font-size: 0.65rem; color: #38bdf8; display: flex; align-items: center; gap: 0.25rem;">
+                                <span id="system-status-dot" style="width: 0.4rem; height: 0.4rem; border-radius: 50%; background-color: #10b981;"></span>
+                                <span id="system-status-label">System Online</span>
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center" style="gap: 0.75rem;">
+                        <label class="switch" title="Toggle System Online/Offline">
+                            <input type="checkbox" id="system-toggle-switch" onchange="handleSystemToggle(this)">
+                            <span class="slider"></span>
+                        </label>
+                    </div>
+                </div>
+            </header>
+
+            <!-- MAIN CONTAINER -->
+            <main class="max-w-6xl mx-auto w-full" style="padding: 1rem 0.75rem; display: flex; flex-direction: column; gap: 1rem;">
+
+                <!-- KYC Notice Banner -->
+                <div id="kyc-notice-banner-30" class="md-flex-row" style="background: linear-gradient(to right, rgba(69, 26, 3, 0.6), #1e293b); border: 1px solid rgba(245, 158, 11, 0.4); border-radius: 1rem; padding: 1rem; display: flex; flex-direction: column; align-items: flex-start; justify-content: space-between; gap: 0.75rem;">
+                    <div class="flex items-center" style="gap: 0.75rem;">
+                        <div style="width: 2.5rem; height: 2.5rem; border-radius: 0.75rem; background-color: rgba(245, 158, 11, 0.2); color: #f59e0b; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+                            <svg class="icon" viewBox="0 0 24 24"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>
+                        </div>
+                        <div>
+                            <h4 style="font-size: 0.875rem; font-weight: 600; color: #f59e0b;">Your KYC Profile Verification is in Progress</h4>
+                            <p style="font-size: 0.75rem; color: #cbd5e1; margin-top: 0.125rem;">Transaction limits may apply. If rejected or need changes, you can update your NID documents.</p>
+                        </div>
+                    </div>
+                    <div class="flex" style="gap: 0.5rem; flex-wrap: wrap;">
+                        <button onclick="openKYCUpdateModal()" style="background-color: #0284c7; color: white; font-weight: bold; font-size: 0.75rem; padding: 0.5rem 0.875rem; border-radius: 0.75rem; white-space: nowrap;">
+                            🔄 Update KYC
+                        </button>
+                        
+                    </div>
+                </div>
+
+                <!-- BALANCES & LIMITS GRID -->
+                <div class="grid grid-3" style="gap: 0.5rem;">
+                    <div class="card-1 relative" style="background: linear-gradient(to bottom right, #1e293b, #0f172a); padding: 0.875rem 0.6rem;">
+                        <div class="flex justify-between items-center" style="margin-bottom: 0.35rem;">
+                            <span style="font-size: 0.65rem; font-weight: 600; color: #94a3b8;">Balance</span>
+                            <span class="badge badge-sky">Active</span>
+                        </div>
+                        <div class="flex items-baseline" style="gap: 0.25rem;">
+                            <span style="font-size: 1.1rem; font-weight: 800; color: white;" id="balance-amount-32">৳0</span>
+                        </div>
+                        <span style="font-size: 0.55rem; color: #34d399; display: block; margin-top: 0.15rem;">Withdraw enabled</span>
+                    </div>
+
+                    <div class="card-1 relative" style="background: linear-gradient(to bottom right, #1e293b, #0f172a); padding: 0.875rem 0.6rem;">
+                        <div class="flex justify-between items-center" style="margin-bottom: 0.35rem;">
+                            <span style="font-size: 0.65rem; font-weight: 600; color: #94a3b8;">Limits</span>
+                            <span class="badge badge-purple">VIP</span>
+                        </div>
+                        <div style="display: flex; flex-direction: column; gap: 0.2rem; font-size: 0.62rem;">
+                            <div class="flex justify-between"><span style="color: #94a3b8;">Cashout:</span> <strong style="color: white;">৳50K</strong></div>
+                            <div class="flex justify-between"><span style="color: #94a3b8;">Agent:</span> <strong style="color: #d8b4fe;">৳1.5L</strong></div>
+                        </div>
+                    </div>
+
+                    <div class="card-1 relative" style="background: linear-gradient(to bottom right, #1e293b, #0f172a); padding: 0.875rem 0.6rem;">
+                        <div class="flex justify-between items-center" style="margin-bottom: 0.35rem;">
+                            <span style="font-size: 0.65rem; font-weight: 600; color: #94a3b8;">Earnings</span>
+                            <span class="badge badge-emerald">2.5%</span>
+                        </div>
+                        <div class="flex items-baseline" style="gap: 0.25rem;">
+                            <span style="font-size: 1.1rem; font-weight: 800; color: #10b981;" id="commission-earnings">৳0</span>
+                        </div>
+                        <span style="font-size: 0.55rem; color: #94a3b8; display: block; margin-top: 0.15rem;">Auto credited</span>
+                    </div>
+                </div>
+
+                <!-- QUICK ACTIONS -->
+                <div>
+                    <h3 style="font-size: 1rem; font-weight: bold; color: white; margin-bottom: 0.875rem;">
+                        <span>Quick Actions</span>
+                    </h3>
+                    <div class="grid grid-2-actions">
+                        <button id="quick-deposit-btn-35" onclick="openRequestModal('deposit')" class="action-card-1">
+                            <span id="deposit-counter-badge" class="badge badge-emerald hidden" style="position: absolute; top: 0.5rem; right: 0.5rem; font-size: 0.65rem; padding: 0.2rem 0.5rem;">0</span>
+                            <div class="action-icon" style="background-color: rgba(16, 185, 129, 0.1); color: #10b981;">
+                                <svg class="icon" style="width: 1.5rem; height: 1.5rem;" viewBox="0 0 24 24"><path d="M4 12l1.41 1.41L11 7.83V20h2V7.83l5.58 5.59L20 12l-8-8-8 8z"/></svg>
+                            </div>
+                            <span style="font-weight: bold; font-size: 0.875rem; color: white;">Deposit Request</span>
+                            <span style="font-size: 0.7rem; color: #94a3b8;">View & Accept Requests</span>
+                        </button>
+
+                        <button id="quick-withdraw-btn-36" onclick="openRequestModal('withdraw')" class="action-card-1">
+                            <span id="withdraw-counter-badge" class="badge badge-amber hidden" style="position: absolute; top: 0.5rem; right: 0.5rem; font-size: 0.65rem; padding: 0.2rem 0.5rem;">0</span>
+                            <div class="action-icon" style="background-color: rgba(245, 158, 11, 0.1); color: #f59e0b;">
+                                <svg class="icon" style="width: 1.5rem; height: 1.5rem;" viewBox="0 0 24 24"><path d="M20 12l-1.41-1.41L13 16.17V4h-2v12.17l-5.58-5.59L4 12l8 8 8-8z"/></svg>
+                            </div>
+                            <span style="font-weight: bold; font-size: 0.875rem; color: white;">Withdraw Request</span>
+                            <span style="font-size: 0.70rem; color: #94a3b8;">View & Accept Requests</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- TODAY'S TRANSACTIONS SECTION -->
+                <div class="card-1" style="margin-top: 0.5rem;">
+                    <div class="flex justify-between items-center border-b" style="padding-bottom: 0.75rem; margin-bottom: 1rem;">
+                        <h3 style="font-weight: bold; font-size: 1rem; color: white;">Today's Transactions <span style="font-size: 0.7rem; color: #38bdf8;" id="current-date-label"></span></h3>
+                        <span style="font-size: 0.65rem; color: #10b981; background-color: rgba(16, 185, 129, 0.15); padding: 0.2rem 0.5rem; border-radius: 9999px;">Resets at 12:00 AM</span>
+                    </div>
+                    <div id="today-transaction-list" style="display: flex; flex-direction: column; gap: 0.75rem;">
+                        <p style="font-size: 0.75rem; color: #94a3b8; text-align: center; padding: 1rem;">No transactions recorded for today yet.</p>
+                    </div>
+                </div>
+            </main>
+        </section>
+    </div>
+
+    <!-- MODALS -->
+    <div id="request-modal" class="modal-backdrop-45 hidden flex items-center justify-center" style="padding: 1rem;">
+        <div class="card-1 w-full max-w-md relative" style="background-color: #1e293b; border: 1px solid #334155; max-height: 85vh; display: flex; flex-direction: column;">
+            <button onclick="closeRequestModal()" style="position: absolute; top: 1rem; right: 1rem; background: none; color: #94a3b8; font-size: 1.25rem;">✕</button>
+            <h3 id="request-modal-title" style="font-size: 1.125rem; font-weight: bold; color: white; margin-bottom: 0.25rem;">Incoming Requests</h3>
+            <p id="request-modal-subtitle" style="font-size: 0.75rem; color: #94a3b8; margin-bottom: 0.75rem;">Verify details and approve or reject</p>
+            <div id="request-list-container" style="overflow-y: auto; display: flex; flex-direction: column; gap: 0.6rem; flex: 1;"></div>
+        </div>
+    </div>
+
+    <div id="add-money-modal" class="modal-backdrop-45 hidden flex items-center justify-center" style="padding: 1rem;">
+        <div class="card-1 w-full max-w-md relative" style="background-color: #1e293b; border: 1px solid #334155;">
+            <button onclick="closeAddMoneyModal()" style="position: absolute; top: 1rem; right: 1rem; background: none; color: #94a3b8; font-size: 1.25rem;">✕</button>
+            <h3 style="font-size: 1.125rem; font-weight: bold; color: white; margin-bottom: 0.25rem;">Add Money (USDT Deposit)</h3>
+            <p style="font-size: 0.75rem; color: #94a3b8; margin-bottom: 1rem;">Send USDT to the address below and submit details</p>
+            <form onsubmit="handleAddMoneySubmit(event)" style="display: flex; flex-direction: column; gap: 0.875rem;">
+                <div>
+                    <label>Binance USDT (TRC20) Wallet Address</label>
+                    <div class="flex" style="gap: 0.5rem;">
+                        <input type="text" id="usdt-wallet-address" value="TF123456789ABCDEF987654321VIPWALLET" readonly style="color: #38bdf8; font-size: 0.75rem;">
+                        <button type="button" onclick="copyUSDTAddress()" class="btn-emerald-2" style="border-radius: 0.75rem;">Copy</button>
+                    </div>
+                </div>
+                <div>
+                    <label>Transaction ID (TrxID / Order ID)</label>
+                    <input type="text" id="add-money-trxid" required placeholder="Enter transaction ID">
+                </div>
+                <div class="grid grid-2">
+                    <div>
+                        <label>Amount (USDT)</label>
+                        <input type="number" step="0.01" id="add-money-usdt" required placeholder="0.00" oninput="calculateBDT(this.value)">
+                    </div>
+                    <div>
+                        <label>Converted Amount (BDT)</label>
+                        <input type="text" id="add-money-bdt" readonly value="৳0" style="color: #10b981; font-weight: bold;">
+                        <span style="font-size: 0.6rem; color: #94a3b8; display: block; margin-top: 0.2rem;">Rate: 1 USD = ৳130</span>
+                    </div>
+                </div>
+                <div>
+                    <label for="add-money-screenshot" style="text-align: center; padding: 0.625rem; background-color: #0f172a; border: 1px dashed rgba(56, 189, 248, 0.5); border-radius: 0.5rem; cursor: pointer; margin: 0; display: block;">
+                        <span style="font-size: 0.75rem; color: #cbd5e1;" id="label-add-money-screenshot">📷 Upload Payment Screenshot</span>
+                    </label>
+                    <input type="file" id="add-money-screenshot" accept="image/*" class="hidden" onchange="updateFileLabel(this, 'label-add-money-screenshot')" required>
+                </div>
+                <div>
+                    <button type="submit" class="btn-accent-1" style="border-radius: 0.75rem;">Submit Deposit Record</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- KYC FORM MODAL -->
+    <div id="kyc-update-modal" class="modal-backdrop-45 hidden flex items-center justify-center" style="padding: 1rem;">
+        <div class="card-1 w-full max-w-md relative" style="background-color: #1e293b; border: 1px solid #334155; max-height: 90vh; overflow-y: auto;">
+            <button onclick="closeKYCUpdateModal()" style="position: absolute; top: 1rem; right: 1rem; background: none; color: #94a3b8; font-size: 1.25rem; z-index: 10; cursor: pointer;">X</button>
+            
+            <div class="form-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 12px; border-bottom: 1px solid #334155;">
+                <h2 style="font-size: 22px; font-weight: 700; color: #38bdf8;">KYC Verification Form</h2>
+            </div>
+
+            <form id="kycForm" onsubmit="handleKYCUpdateSubmit(event)">
+                <div class="form-group">
+                    <label for="fullName">Full Name *</label>
+                    <div class="input-wrapper">
+                        <i class="fa-regular fa-user"></i>
+                        <input type="text" id="fullName" class="form-control" placeholder="Enter your full name" required>
+                    </div>
+                </div>
+
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label for="dob">Date of Birth *</label>
+                        <div class="input-wrapper">
+                            <i class="fa-regular fa-calendar"></i>
+                            <input type="date" id="dob" class="form-control" required>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="gender">Gender *</label>
+                        <div class="input-wrapper" style="position: relative;">
+                            <i class="fa-solid fa-venus-mars"></i>
+                            <select id="gender" class="form-control" required>
+                                <option value="" disabled selected>Select Gender</option>
+                                <option value="male">Male</option>
+                                <option value="female">Female</option>
+                                <option value="other">Other</option>
+                            </select>
+                            <i class="fa-solid fa-chevron-down select-icon" style="position: absolute; right: 14px; pointer-events: none; color: #64748b;"></i>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="nationality">Nationality *</label>
+                    <div class="input-wrapper">
+                        <i class="fa-solid fa-flag"></i>
+                        <input type="text" id="nationality" class="form-control" placeholder="e.g. Bangladeshi" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="email">Email Address *</label>
+                    <div class="input-wrapper">
+                        <i class="fa-regular fa-envelope"></i>
+                        <input type="email" id="email" class="form-control" placeholder="example@mail.com" required>
+                    </div>
+                </div>
+
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label for="phone">Phone Number *</label>
+                        <div class="input-wrapper">
+                            <i class="fa-solid fa-phone"></i>
+                            <input type="tel" id="phone" class="form-control" placeholder="+880 1XXXXXXXXX" required>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="telegram">Telegram User ID *</label>
+                        <div class="input-wrapper">
+                            <i class="fa-brands fa-telegram"></i>
+                            <input type="text" id="telegram" class="form-control" placeholder="@username" required>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="address">Address Line *</label>
+                    <div class="input-wrapper">
+                        <i class="fa-solid fa-location-dot"></i>
+                        <input type="text" id="address" class="form-control" placeholder="House/Street, City, Postal Code, Country" required>
+                    </div>
+                </div>
+
+                <div class="kyc-upload-card">
+                    <div class="kyc-card-header">
+                        <div class="kyc-card-title">
+                            <i class="fa-solid fa-id-card"></i> KYC Identity Upload
+                        </div>
+                        <span class="mandatory-badge">Mandatory</span>
+                    </div>
+
+                    <table class="nid-table">
+                        <tr>
+                            <td width="50%">
+                                <div class="upload-field" id="boxFront" onclick="document.getElementById('idFront').click()">
+                                    <input type="file" id="idFront" accept="image/*" style="display:none;" onchange="handleFileChange(this, 'boxFront', 'txtFront', 'imgFront')" required>
+                                    <img id="imgFront" class="preview-thumb" style="display:none;" alt="Front">
+                                    <span id="txtFront" class="field-label">
+                                        NID Front Side
+                                    </span>
+                                </div>
+                            </td>
+                            <td width="50%">
+                                <div class="upload-field" id="boxBack" onclick="document.getElementById('idBack').click()">
+                                    <input type="file" id="idBack" accept="image/*" style="display:none;" onchange="handleFileChange(this, 'boxBack', 'txtBack', 'imgBack')" required>
+                                    <img id="imgBack" class="preview-thumb" style="display:none;" alt="Back">
+                                    <span id="txtBack" class="field-label">
+                                        NID Back Side
+                                    </span>
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td colspan="2">
+                                <div class="upload-field" id="boxSelfie" onclick="document.getElementById('idSelfie').click()">
+                                    <input type="file" id="idSelfie" accept="image/*" style="display:none;" onchange="handleFileChange(this, 'boxSelfie', 'txtSelfie', 'imgSelfie')" required>
+                                    <img id="imgSelfie" class="preview-thumb" style="display:none;" alt="Selfie">
+                                    <span id="txtSelfie" class="field-label">
+                                        Clear Selfie holding NID card
+                                    </span>
+                                </div>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+
+                <label class="checkbox-container">
+                    <input type="checkbox" id="declaration" required>
+                    <span>আমি নিশ্চয়তা দিচ্ছি যে প্রদত্ত সকল তথ্য ও এনআইডি কার্ডের ডকুমেন্টস সম্পূর্ণ সঠিক ও বৈধ।</span>
+                </label>
+
+                <button type="submit" class="submit-btn" style="border-radius: 0.75rem;">
+                    <span>Submit KYC Application</span>
+                    <i class="fa-solid fa-arrow-right"></i>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- FORGET PASSWORD MODAL -->
+    <div id="forgot-password-modal" class="modal-backdrop-45 hidden flex items-center justify-center" style="padding: 1rem;">
+        <div class="card-1 w-full max-w-md relative" style="background-color: #1e293b; border: 1px solid #334155;">
+            <button onclick="closeForgotPasswordModal()" style="position: absolute; top: 1rem; right: 1rem; background: none; color: #94a3b8; font-size: 1.25rem; cursor: pointer;">✕</button>
+            <h3 style="font-size: 1.125rem; font-weight: bold; color: white; margin-bottom: 0.25rem;">Reset Password</h3>
+            <p style="font-size: 0.75rem; color: #94a3b8; margin-bottom: 1rem;">Recover access to your VIP Wallet account</p>
+            
+            <!-- Step 1: Email & OTP -->
+            <form id="forgot-step-1-form" onsubmit="handleForgotVerifyOTP(event)" style="display: flex; flex-direction: column; gap: 1rem;">
+                <div>
+                    <label>Current Email Address</label>
+                    <input type="email" id="forgot-email" required placeholder="Enter registered email">
+                </div>
+                <div>
+                    <label>Email Verification Code (OTP)</label>
+                    <div class="flex" style="gap: 0.5rem;">
+                        <input type="text" id="forgot-otp" required inputmode="numeric" pattern="[0-9]{6}" minlength="6" maxlength="6" placeholder="6 digit code">
+                        <button type="button" id="forgot-send-code-btn" onclick="triggerForgotPasswordOTP()" class="btn-emerald-2" style="border-radius: 0.75rem;">
+                            <span>Send Code</span>
+                        </button>
+                    </div>
+                </div>
+                <div>
+                    <button type="submit" id="forgot-next-btn" class="btn-accent-1" style="border-radius: 0.75rem;">Next / Verify</button>
+                </div>
+            </form>
+
+            <!-- Step 2: New Password Form -->
+            <form id="forgot-step-2-form" onsubmit="handleForgotNewPasswordSubmit(event)" class="hidden" style="display: flex; flex-direction: column; gap: 1rem;">
+                <div>
+                    <label>New Password</label>
+                    <div class="relative">
+                        <input type="password" id="forgot-new-pwd" required placeholder="Min 6 characters" class="input-password-padding">
+                        <button type="button" onclick="togglePasswordVisibility('forgot-new-pwd', 'eye-f-1')" class="absolute" style="right: 0.75rem; top: 0.75rem; background: none; color: #64748b;" title="Show/Hide">
+                            <svg id="eye-f-1" class="icon" viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+                        </button>
+                    </div>
+                </div>
+                <div>
+                    <label>Confirm New Password</label>
+                    <div class="relative">
+                        <input type="password" id="forgot-confirm-pwd" required placeholder="Re-enter new password" class="input-password-padding">
+                        <button type="button" onclick="togglePasswordVisibility('forgot-confirm-pwd', 'eye-f-2')" class="absolute" style="right: 0.75rem; top: 0.75rem; background: none; color: #64748b;" title="Show/Hide">
+                            <svg id="eye-f-2" class="icon" viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+                        </button>
+                    </div>
+                </div>
+                <div>
+                    <button type="submit" id="forgot-update-btn" class="btn-accent-1" style="border-radius: 0.75rem;">Update Password</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="add-bank-modal" class="modal-backdrop-45 hidden flex items-center justify-center" style="padding: 1rem;">
+        <div class="card-1 w-full max-w-md relative" style="background-color: #1e293b; border: 1px solid #334155;">
+            <button onclick="closeAddBankModal()" style="position: absolute; top: 1rem; right: 1rem; background: none; color: #94a3b8; font-size: 1.25rem;">✕</button>
+            <h3 style="font-size: 1.125rem; font-weight: bold; color: white; margin-bottom: 0.25rem;">Add Bank / Mobile Account</h3>
+            <p style="font-size: 0.75rem; color: #94a3b8; margin-bottom: 1rem;">Link your payment gateway or bank account</p>
+            <form onsubmit="handleAddBankSubmit(event)" style="display: flex; flex-direction: column; gap: 1rem;">
+                <div>
+                    <label>Select Provider / Bank</label>
+                    <select id="bank-provider" required>
+                        <option value="bKash">বিকাশ (bKash)</option>
+                        <option value="Nagad">নগদ (Nagad)</option>
+                        <option value="Rocket">রকেট (Rocket)</option>
+                        <option value="Upay">উপায় (Upay)</option>
+                    </select>
+                </div>
+                <div>
+                    <label>Account Type</label>
+                    <select id="bank-acc-type" required>
+                        <option value="Personal">Personal</option>
+                        <option value="Agent">Agent</option>
+                    </select>
+                </div>
+                <div>
+                    <label>Account / Phone Number (11 Digits)</label>
+                    <input type="tel" id="bank-number" required inputmode="numeric" pattern="[0-9]{11}" minlength="11" maxlength="11" placeholder="017XXXXXXXX">
+                </div>
+                <div>
+                    <button type="submit" class="btn-accent-1" style="border-radius: 0.75rem;">Save Account (Online)</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="history-modal" class="modal-backdrop-45 hidden flex items-center justify-center" style="padding: 1rem;">
+        <div class="card-1 w-full max-w-md relative" style="background-color: #1e293b; border: 1px solid #334155; max-height: 85vh; display: flex; flex-direction: column;">
+            <button onclick="closeHistoryModal()" style="position: absolute; top: 1rem; right: 1rem; background: none; color: #94a3b8; font-size: 1.25rem;">✕</button>
+            <h3 style="font-size: 1.125rem; font-weight: bold; color: white; margin-bottom: 0.5rem;">Transaction History</h3>
+            <div class="flex" style="background-color: #0f172a; padding: 0.25rem; border-radius: 0.5rem; margin-bottom: 0.8rem; font-size: 0.7rem;">
+                <button onclick="filterHistory('today')" id="hist-tab-today" class="tab-btn-1 active" style="padding: 0.4rem;">Today</button>
+                <button onclick="filterHistory('month')" id="hist-tab-month" class="tab-btn-1" style="padding: 0.4rem;">Monthly</button>
+                <button onclick="filterHistory('year')" id="hist-tab-year" class="tab-btn-1" style="padding: 0.4rem;">Yearly</button>
+                <button onclick="filterHistory('lifetime')" id="hist-tab-lifetime" class="tab-btn-1" style="padding: 0.4rem;">Lifetime</button>
+            </div>
+            <div id="history-list-container" style="overflow-y: auto; display: flex; flex-direction: column; gap: 0.6rem; flex: 1;"></div>
+        </div>
+    </div>
+
+    <div id="add-money-history-modal" class="modal-backdrop-45 hidden flex items-center justify-center" style="padding: 1rem;">
+        <div class="card-1 w-full max-w-md relative" style="background-color: #1e293b; border: 1px solid #334155; max-height: 85vh; display: flex; flex-direction: column;">
+            <button onclick="closeAddMoneyHistoryModal()" style="position: absolute; top: 1rem; right: 1rem; background: none; color: #94a3b8; font-size: 1.25rem;">✕</button>
+            <h3 style="font-size: 1.125rem; font-weight: bold; color: white; margin-bottom: 0.25rem;">Add Money History</h3>
+            <p style="font-size: 0.75rem; color: #34d399; margin-bottom: 0.75rem;" id="total-add-money-label">Total Loaded: ৳0</p>
+            <div id="add-money-history-container" style="overflow-y: auto; display: flex; flex-direction: column; gap: 0.6rem; flex: 1;"></div>
+        </div>
+    </div>
+
+    <div id="add-bank-history-modal" class="modal-backdrop-45 hidden flex items-center justify-center" style="padding: 1rem;">
+        <div class="card-1 w-full max-w-md relative" style="background-color: #1e293b; border: 1px solid #334155; max-height: 85vh; display: flex; flex-direction: column;">
+            <button onclick="closeAddBankHistoryModal()" style="position: absolute; top: 1rem; right: 1rem; background: none; color: #94a3b8; font-size: 1.25rem;">✕</button>
+            <h3 style="font-size: 1.125rem; font-weight: bold; color: white; margin-bottom: 0.25rem;">Add Bank / Number History</h3>
+            <p style="font-size: 0.75rem; color: #f43f5e; margin-bottom: 0.75rem;" id="total-bank-label">Total Accounts Uploaded: 0</p>
+            <div id="add-bank-history-container" style="overflow-y: auto; display: flex; flex-direction: column; gap: 0.6rem; flex: 1;"></div>
+        </div>
+    </div>
+
+    <!-- CHANGE PASSWORD MODAL -->
+    <div id="password-modal" class="modal-backdrop-45 hidden flex items-center justify-center" style="padding: 1rem;">
+        <div class="card-1 w-full max-w-md relative" style="background-color: #1e293b; border: 1px solid #334155;">
+            <button onclick="closeChangePasswordModal()" style="position: absolute; top: 1rem; right: 1rem; background: none; color: #94a3b8; font-size: 1.25rem;">✕</button>
+            <h3 style="font-size: 1.125rem; font-weight: bold; color: white; margin-bottom: 0.25rem;">Change Password</h3>
+            <p style="font-size: 0.75rem; color: #94a3b8; margin-bottom: 1rem;">Enter your current and new password</p>
+            <form onsubmit="handlePasswordChangeSubmit(event)" style="display: flex; flex-direction: column; gap: 1rem;">
+                <div>
+                    <label>Current Password</label>
+                    <div class="relative">
+                        <input type="password" id="current-password" required placeholder="Enter current password" class="input-password-padding">
+                        <button type="button" onclick="togglePasswordVisibility('current-password', 'eye-pwd-1')" class="absolute" style="right: 0.75rem; top: 0.75rem; background: none; color: #64748b;" title="Show/Hide">
+                            <svg id="eye-pwd-1" class="icon" viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+                        </button>
+                    </div>
+                </div>
+                <div>
+                    <label>New Password</label>
+                    <div class="relative">
+                        <input type="password" id="new-password" required placeholder="Min 6 characters" class="input-password-padding">
+                        <button type="button" onclick="togglePasswordVisibility('new-password', 'eye-pwd-2')" class="absolute" style="right: 0.75rem; top: 0.75rem; background: none; color: #64748b;" title="Show/Hide">
+                            <svg id="eye-pwd-2" class="icon" viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+                        </button>
+                    </div>
+                </div>
+                <div>
+                    <label>Confirm New Password</label>
+                    <div class="relative">
+                        <input type="password" id="confirm-new-password" required placeholder="Re-enter new password" class="input-password-padding">
+                        <button type="button" onclick="togglePasswordVisibility('confirm-new-password', 'eye-pwd-3')" class="absolute" style="right: 0.75rem; top: 0.75rem; background: none; color: #64748b;" title="Show/Hide">
+                            <svg id="eye-pwd-3" class="icon" viewBox="0 0 24 24"><path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>
+                        </button>
+                    </div>
+                </div>
+                <div>
+                    <button type="submit" class="btn-accent-1" style="border-radius: 0.75rem;">Update Password</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
