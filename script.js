@@ -9,7 +9,7 @@ const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_
 const state = {
     isLoggedIn: false,
     kycApproved: false,
-    kycStatus: 'pending',
+    kycStatus: 'none', // ডিফল্ট 'none' রাখা হলো যাতে প্রথমবার ইউজার আপলোড করতে পারে
     balance: 0.00,
     totalEarnings: 0.00,
     systemOnline: false,
@@ -286,7 +286,7 @@ async function handleLoginSubmit(e) {
         state.user.phone = userData.phone || "";
         state.balance = userData.balance || 0.00;
         
-        state.kycStatus = kycData ? kycData.kyc_status : (userData.kyc || 'pending');
+        state.kycStatus = kycData ? kycData.kyc_status : (userData.kyc || 'none');
         state.kycApproved = (state.kycStatus === 'approved');
 
         state.systemOnline = false;
@@ -370,20 +370,14 @@ async function handleRegisterSubmit(e) {
         }
 
         const { error: userInsertError } = await supabaseClient.from('users').upsert([
-            { id: userId, full_name: name, email: email, phone: phone, password: password, balance: 0.00, income: 0.00, kyc: 'pending' }
+            { id: userId, full_name: name, email: email, phone: phone, password: password, balance: 0.00, income: 0.00, kyc: 'none' }
         ], { onConflict: 'email' });
 
         if (userInsertError) throw userInsertError;
 
-        const { error: kycInsertError } = await supabaseClient.from('kyc').upsert([
-            { user_email: email, user_name: name, kyc_status: 'pending' }
-        ], { onConflict: 'user_email' });
-
-        if (kycInsertError) throw kycInsertError;
-
         state.isLoggedIn = true;
         state.user = { name, email, phone };
-        state.kycStatus = 'pending';
+        state.kycStatus = 'none';
         state.kycApproved = false;
         state.systemOnline = false;
 
@@ -817,15 +811,15 @@ function updateKYCUI() {
             drawerBadge.className = "badge badge-amber";
         }
     } else {
-        // Rejected বা প্রথম অবস্থা
+        // প্রথমবার বা রিজেক্ট হলে ইউজার খুব সহজে আপলোড করতে পারবে
         if (noticeBanner) noticeBanner.classList.remove('hidden');
         if (kycUploadBtn) {
             kycUploadBtn.style.display = 'inline-block';
-            kycUploadBtn.textContent = "Upload KYC";
-            kycUploadBtn.disabled = false; // রিজেক্ট হলে পুনরায় আপলোড করতে পারবে
+            kycUploadBtn.textContent = state.kycStatus === 'rejected' ? "Resubmit KYC" : "Upload KYC";
+            kycUploadBtn.disabled = false; // একদম সচল থাকবে
         }
         if (drawerBadge) {
-            drawerBadge.textContent = "Rejected / Unverified";
+            drawerBadge.textContent = state.kycStatus === 'rejected' ? "Rejected" : "Unverified";
             drawerBadge.className = "badge badge-amber";
         }
     }
@@ -1689,7 +1683,7 @@ async function handleLogout() {
     state.isLoggedIn = false;
     state.systemOnline = false;
     state.kycApproved = false;
-    state.kycStatus = 'pending';
+    state.kycStatus = 'none';
     state.balance = 0.00;
     state.totalEarnings = 0.00;
     state.user = { name: "", email: "", phone: "" };
