@@ -794,38 +794,17 @@ function toggleKYCStatus() {
 function updateKYCUI() {
     const noticeBanner = document.getElementById('kyc-notice-banner-30');
     const drawerBadge = document.getElementById('drawer-kyc-badge');
-    const kycUploadBtn = document.getElementById('kyc-upload-btn-id') || document.querySelector('[onclick="openKYCUpdateModal()"]');
 
     if (state.kycStatus === 'approved') {
         if (noticeBanner) noticeBanner.classList.add('hidden');
-        if (kycUploadBtn) {
-            kycUploadBtn.style.display = 'none'; // এপ্রুভ হলে আপলোড বাটন হাইড থাকবে
-        }
         if (drawerBadge) {
             drawerBadge.textContent = "Verified";
             drawerBadge.className = "badge badge-emerald";
         }
-    } else if (state.kycStatus === 'pending') {
+    } else {
         if (noticeBanner) noticeBanner.classList.remove('hidden');
-        if (kycUploadBtn) {
-            kycUploadBtn.style.display = 'inline-block';
-            kycUploadBtn.textContent = "Pending Review";
-            kycUploadBtn.disabled = true; // পেন্ডিং থাকলে ক্লিক করা যাবে না
-        }
         if (drawerBadge) {
             drawerBadge.textContent = "Pending";
-            drawerBadge.className = "badge badge-amber";
-        }
-    } else {
-        // Rejected বা প্রথম অবস্থা
-        if (noticeBanner) noticeBanner.classList.remove('hidden');
-        if (kycUploadBtn) {
-            kycUploadBtn.style.display = 'inline-block';
-            kycUploadBtn.textContent = "Upload KYC";
-            kycUploadBtn.disabled = false; // রিজেক্ট হলে পুনরায় আপলোড করতে পারবে
-        }
-        if (drawerBadge) {
-            drawerBadge.textContent = "Rejected / Unverified";
             drawerBadge.className = "badge badge-amber";
         }
     }
@@ -834,10 +813,6 @@ function updateKYCUI() {
 function openKYCUpdateModal() { 
     if (state.kycStatus === 'approved') {
         showToast("Your KYC has already been lifetime verified (Approved) by the admin!", "info");
-        return;
-    }
-    if (state.kycStatus === 'pending') {
-        showToast("Your KYC is currently pending review by the admin!", "info");
         return;
     }
     const modal = document.getElementById('kyc-update-modal');
