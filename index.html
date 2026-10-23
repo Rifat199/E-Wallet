@@ -218,15 +218,15 @@
                         </div>
                         <div>
                             <h2 style="font-size: 1rem; font-weight: bold; color: white; line-height: 1.2;">VIP Wallet Systems Ltd.</h2>
-                            <span id="system-status-text" style="font-size: 0.65rem; color: #38bdf8; display: flex; align-items: center; gap: 0.25rem;">
-                                <span id="system-status-dot" style="width: 0.4rem; height: 0.4rem; border-radius: 50%; background-color: #10b981;"></span>
-                                <span id="system-status-label">System Online</span>
+                            <span id="system-status-text" style="font-size: 0.65rem; color: #f43f5e; display: flex; align-items: center; gap: 0.25rem;">
+                                <span id="system-status-dot" style="width: 0.4rem; height: 0.4rem; border-radius: 50%; background-color: #f43f5e;"></span>
+                                <span id="system-status-label">System Offline</span>
                             </span>
                         </div>
                     </div>
 
                     <div class="flex items-center" style="gap: 0.75rem;">
-                        <label class="switch" title="Toggle System Offline/Oneline">
+                        <label class="switch" title="Toggle System Online/Offline">
                             <input type="checkbox" id="system-toggle-switch" onchange="handleSystemToggle(this)">
                             <span class="slider"></span>
                         </label>
@@ -244,15 +244,14 @@
                             <svg class="icon" viewBox="0 0 24 24"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>
                         </div>
                         <div>
-                            <h4 style="font-size: 0.875rem; font-weight: 600; color: #f59e0b;">Your KYC Profile Verification is in Progress</h4>
-                            <p style="font-size: 0.75rem; color: #cbd5e1; margin-top: 0.125rem;">Transaction limits may apply. If rejected or need changes, you can update your NID documents.</p>
+                            <h4 style="font-size: 0.875rem; font-weight: 600; color: #f59e0b;">KYC Verification Required</h4>
+                            <p style="font-size: 0.75rem; color: #cbd5e1; margin-top: 0.125rem;">Please submit your KYC documents to unlock full transaction limits.</p>
                         </div>
                     </div>
                     <div class="flex" style="gap: 0.5rem; flex-wrap: wrap;">
                         <button onclick="openKYCUpdateModal()" style="background-color: #0284c7; color: white; font-weight: bold; font-size: 0.75rem; padding: 0.5rem 0.875rem; border-radius: 0.75rem; white-space: nowrap;">
-                            🔄 Update KYC
+                            KYC আপলোড
                         </button>
-                        
                     </div>
                 </div>
 
