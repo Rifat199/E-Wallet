@@ -212,6 +212,25 @@ function updateFileLabel(input, labelId) {
     }
 }
 
+// ================= ImgBB UPLOAD HELPER =================
+async function uploadToImgBB(file) {
+    const formData = new FormData();
+    formData.append('image', file);
+    
+    const apiKey = '7662bd6aadabe5a5740541316563d305'; 
+    const response = await fetch(`https://api.imgbb.com/1/upload?key=${apiKey}`, {
+        method: 'POST',
+        body: formData
+    });
+    
+    const result = await response.json();
+    if (result && result.success) {
+        return result.data.url;
+    } else {
+        throw new Error("Failed to upload image to ImgBB");
+    }
+}
+
 // ================= LOGIN SUBMIT =================
 async function handleLoginSubmit(e) {
     e.preventDefault();
@@ -698,11 +717,17 @@ async function renderKYCAdminList() {
                 
                 div.innerHTML = `
                     <div style="display: flex; justify-content: space-between; align-items: center;">
-                        <strong style="color: #38bdf8;">${item.user_name || item.user_email || 'User'}</strong>
+                        <strong style="color: #38bdf8;">${item.full_name || item.user_name || item.user_email || 'User'}</strong>
                         <span class="badge badge-amber">Pending</span>
                     </div>
-                    <div style="font-size: 0.7rem; color: #cbd5e1;">
+                    <div style="font-size: 0.7rem; color: #cbd5e1; display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.25rem;">
                         <div>Email: ${item.user_email}</div>
+                        <div>Phone: ${item.phone || 'N/A'}</div>
+                        <div>DOB: ${item.dob || 'N/A'}</div>
+                        <div>Gender: ${item.gender || 'N/A'}</div>
+                        <div>Nationality: ${item.nationality || 'N/A'}</div>
+                        <div>Telegram: ${item.telegram || 'N/A'}</div>
+                        <div style="grid-column: span 2;">Address: ${item.address || 'N/A'}</div>
                     </div>
                     <div style="display: flex; gap: 0.5rem; font-size: 0.7rem;">
                         <a href="${item.nid_front || '#'}" target="_blank" class="btn-sky-2" style="flex:1; text-align:center; padding: 0.3rem; border-radius: 0.3rem; background: #0284c7; color: white; text-decoration: none;">Front Side (Open)</a>
@@ -769,17 +794,38 @@ function toggleKYCStatus() {
 function updateKYCUI() {
     const noticeBanner = document.getElementById('kyc-notice-banner-30');
     const drawerBadge = document.getElementById('drawer-kyc-badge');
+    const kycUploadBtn = document.getElementById('kyc-upload-btn-id') || document.querySelector('[onclick="openKYCUpdateModal()"]');
 
     if (state.kycStatus === 'approved') {
         if (noticeBanner) noticeBanner.classList.add('hidden');
+        if (kycUploadBtn) {
+            kycUploadBtn.style.display = 'none'; // এপ্রুভ হলে আপলোড বাটন হাইড থাকবে
+        }
         if (drawerBadge) {
             drawerBadge.textContent = "Verified";
             drawerBadge.className = "badge badge-emerald";
         }
-    } else {
+    } else if (state.kycStatus === 'pending') {
         if (noticeBanner) noticeBanner.classList.remove('hidden');
+        if (kycUploadBtn) {
+            kycUploadBtn.style.display = 'inline-block';
+            kycUploadBtn.textContent = "Pending Review";
+            kycUploadBtn.disabled = true; // পেন্ডিং থাকলে ক্লিক করা যাবে না
+        }
         if (drawerBadge) {
             drawerBadge.textContent = "Pending";
+            drawerBadge.className = "badge badge-amber";
+        }
+    } else {
+        // Rejected বা প্রথম অবস্থা
+        if (noticeBanner) noticeBanner.classList.remove('hidden');
+        if (kycUploadBtn) {
+            kycUploadBtn.style.display = 'inline-block';
+            kycUploadBtn.textContent = "Upload KYC";
+            kycUploadBtn.disabled = false; // রিজেক্ট হলে পুনরায় আপলোড করতে পারবে
+        }
+        if (drawerBadge) {
+            drawerBadge.textContent = "Rejected / Unverified";
             drawerBadge.className = "badge badge-amber";
         }
     }
@@ -788,6 +834,10 @@ function updateKYCUI() {
 function openKYCUpdateModal() { 
     if (state.kycStatus === 'approved') {
         showToast("Your KYC has already been lifetime verified (Approved) by the admin!", "info");
+        return;
+    }
+    if (state.kycStatus === 'pending') {
+        showToast("Your KYC is currently pending review by the admin!", "info");
         return;
     }
     const modal = document.getElementById('kyc-update-modal');
@@ -817,16 +867,17 @@ function handleFileChange(input, boxId, textId, imgId) {
     }
 }
 
-async function uploadImageToLink(file) {
-    return new Promise((resolve) => {
-        const reader = new FileReader();
-        reader.onload = (e) => resolve(e.target.result);
-        reader.readAsDataURL(file);
-    });
-}
-
 async function handleKYCUpdateSubmit(e) {
     e.preventDefault();
+    const fullName = document.getElementById('fullName')?.value.trim();
+    const dob = document.getElementById('dob')?.value.trim();
+    const gender = document.getElementById('gender')?.value.trim();
+    const nationality = document.getElementById('nationality')?.value.trim();
+    const email = document.getElementById('email')?.value.trim();
+    const phone = document.getElementById('phone')?.value.trim();
+    const telegram = document.getElementById('telegram')?.value.trim();
+    const address = document.getElementById('address')?.value.trim();
+
     const frontFile = document.getElementById('idFront')?.files[0];
     const backFile = document.getElementById('idBack')?.files[0];
     const selfieFile = document.getElementById('idSelfie')?.files[0];
@@ -837,30 +888,37 @@ async function handleKYCUpdateSubmit(e) {
     }
 
     try {
-        showToast("Uploading KYC documents...", "info");
-        const frontUrl = await uploadImageToLink(frontFile);
-        const backUrl = await uploadImageToLink(backFile);
-        const selfieUrl = await uploadImageToLink(selfieFile);
+        showToast("Uploading KYC documents to ImgBB...", "info");
+        const frontUrl = await uploadToImgBB(frontFile);
+        const backUrl = await uploadToImgBB(backFile);
+        const selfieUrl = await uploadToImgBB(selfieFile);
+
+        const kycPayload = {
+            user_email: state.user.email || email,
+            user_name: state.user.name || fullName,
+            full_name: fullName,
+            dob: dob,
+            gender: gender,
+            nationality: nationality,
+            phone: phone,
+            telegram: telegram,
+            address: address,
+            kyc_status: 'pending',
+            nid_front: frontUrl,
+            nid_back: backUrl,
+            nid_selfie: selfieUrl
+        };
 
         const { error } = await supabaseClient
             .from('kyc')
-            .upsert([
-                {
-                    user_email: state.user.email,
-                    user_name: state.user.name,
-                    kyc_status: 'pending',
-                    nid_front: frontUrl,
-                    nid_back: backUrl,
-                    nid_selfie: selfieUrl
-                }
-            ], { onConflict: 'user_email' });
+            .upsert([kycPayload], { onConflict: 'user_email' });
 
         if (error) throw error;
 
         await supabaseClient
             .from('users')
             .update({ kyc: 'pending' })
-            .eq('email', state.user.email);
+            .eq('email', state.user.email || email);
 
         state.kycApproved = false;
         state.kycStatus = 'pending';
@@ -939,18 +997,22 @@ async function handleAddMoneySubmit(e) {
     const bdtAmount = usdtAmount * 130;
     const currentDate = new Date().toLocaleDateString();
 
-    const depositRequest = {
-        user_email: state.user.email || 'user@vipwallet.com',
-        user_name: state.user.name || 'USER',
-        payment_method: 'Binance',
-        trx_id: trxId,
-        usdt_amount: usdtAmount,
-        bdt_amount: bdtAmount,
-        status: 'Pending',
-        date: currentDate
-    };
-
     try {
+        showToast("Uploading payment screenshot to ImgBB...", "info");
+        const screenshotUrl = await uploadToImgBB(screenshot);
+
+        const depositRequest = {
+            user_email: state.user.email || 'user@vipwallet.com',
+            user_name: state.user.name || 'USER',
+            payment_method: 'Binance',
+            trx_id: trxId,
+            usdt_amount: usdtAmount,
+            bdt_amount: bdtAmount,
+            screenshot: screenshotUrl,
+            status: 'Pending',
+            date: currentDate
+        };
+
         const { error: reqError } = await supabaseClient
             .from('add_money_requests')
             .insert([depositRequest]);
