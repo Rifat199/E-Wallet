@@ -9,7 +9,7 @@ const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_
 const state = {
     isLoggedIn: false,
     kycApproved: false,
-    kycStatus: 'pending',
+    kycStatus: 'none',
     balance: 0.00,
     totalEarnings: 0.00,
     systemOnline: false,
@@ -267,7 +267,7 @@ async function handleLoginSubmit(e) {
         state.user.phone = userData.phone || "";
         state.balance = userData.balance || 0.00;
         
-        state.kycStatus = kycData ? kycData.kyc_status : (userData.kyc || 'pending');
+        state.kycStatus = kycData ? kycData.kyc_status : (userData.kyc || 'none');
         state.kycApproved = (state.kycStatus === 'approved');
 
         state.systemOnline = false;
@@ -282,7 +282,6 @@ async function handleLoginSubmit(e) {
         fetchIncomingRequestsFromSupabase();
         renderTodayTransactions();
         
-        // পাইপলাইন ব্যাকগ্রাউন্ড সিঙ্ক চালু করা হলো
         startLivePipeline();
 
         if (authSection) authSection.classList.add('hidden');
@@ -351,26 +350,25 @@ async function handleRegisterSubmit(e) {
         }
 
         const { error: userInsertError } = await supabaseClient.from('users').upsert([
-            { id: userId, full_name: name, email: email, phone: phone, password: password, balance: 0.00, income: 0.00, kyc: 'pending' }
+            { id: userId, full_name: name, email: email, phone: phone, password: password, balance: 0.00, income: 0.00, kyc: 'none' }
         ], { onConflict: 'email' });
 
         if (userInsertError) throw userInsertError;
 
         const { error: kycInsertError } = await supabaseClient.from('kyc').upsert([
-            { user_email: email, user_name: name, kyc_status: 'pending' }
+            { user_email: email, user_name: name, kyc_status: 'none' }
         ], { onConflict: 'user_email' });
 
         if (kycInsertError) throw kycInsertError;
 
         state.isLoggedIn = true;
         state.user = { name, email, phone };
-        state.kycStatus = 'pending';
+        state.kycStatus = 'none';
         state.kycApproved = false;
         state.systemOnline = false;
 
         renderUserData();
         
-        // পাইপলাইন ব্যাকগ্রাউন্ড সিঙ্ক চালু করা হলো
         startLivePipeline();
 
         if (authSection) authSection.classList.add('hidden');
@@ -772,14 +770,12 @@ function updateKYCUI() {
     const kycUploadBtn = document.querySelector('button[onclick="openKYCUpdateModal()"]');
 
     if (state.kycStatus === 'approved') {
-        // ১. এডমিন অ্যাপ্রুভ করলে: ব্যানার এবং আপলোড বাটন চিরতরে হাইড হয়ে যাবে, ইউজার ভেরিফাইড দেখাবে
         if (noticeBanner) noticeBanner.classList.add('hidden');
         if (drawerBadge) {
             drawerBadge.textContent = "Verified";
             drawerBadge.className = "badge badge-emerald";
         }
     } else if (state.kycStatus === 'pending') {
-        // ২. ইউজার সাবমিট করার পর (পেন্ডিং অবস্থায়): ব্যানার থাকবে, কিন্তু বাটন ডিসএবল ও "KYC Pending" হয়ে যাবে
         if (noticeBanner) noticeBanner.classList.remove('hidden');
 
         if (kycUploadBtn) {
@@ -794,14 +790,13 @@ function updateKYCUI() {
             drawerBadge.className = "badge badge-amber";
         }
     } else if (state.kycStatus === 'rejected') {
-        // ৩. এডমিন রিজেক্ট করলে: ব্যানার থাকবে এবং বাটন আবার আনলক হয়ে যাবে, যাতে সে পুনরায় আপলোড করতে পারে
         if (noticeBanner) noticeBanner.classList.remove('hidden');
 
         if (kycUploadBtn) {
             kycUploadBtn.disabled = false;
             kycUploadBtn.style.opacity = "1";
             kycUploadBtn.style.cursor = "pointer";
-            kycUploadBtn.innerHTML = `<span>KYC আপলোড</span>`;
+            kycUploadBtn.innerHTML = `<span>KYC Upload</span>`;
         }
 
         if (drawerBadge) {
@@ -809,7 +804,6 @@ function updateKYCUI() {
             drawerBadge.className = "badge badge-error";
         }
     } else {
-        // ডিফল্ট বা একদম নতুন ইউজারের জন্য (যখন স্ট্যাটাস নরমাল বা ইনিশিয়াল থাকে)
         if (noticeBanner) noticeBanner.classList.remove('hidden');
         if (kycUploadBtn) {
             kycUploadBtn.disabled = false;
@@ -817,9 +811,12 @@ function updateKYCUI() {
             kycUploadBtn.style.cursor = "pointer";
             kycUploadBtn.innerHTML = `<span>KYC আপলোড</span>`;
         }
+        if (drawerBadge) {
+            drawerBadge.textContent = "Not Verified";
+            drawerBadge.className = "badge badge-amber";
+        }
     }
 }
-
 
 function openKYCUpdateModal() { 
     if (state.kycStatus === 'approved') {
@@ -853,21 +850,31 @@ function handleFileChange(input, boxId, textId, imgId) {
     }
 }
 
-async function uploadImageToLink(file) {
-    return new Promise((resolve) => {
-        const reader = new FileReader();
-        reader.onload = (e) => resolve(e.target.result);
-        reader.readAsDataURL(file);
+// ================= IMGBB UPLOAD FUNCTION =================
+async function uploadToImgBB(file) {
+    const apiKey = 'dfdfea7a4e4ba556e75b33eaa10b73cd';
+    const formData = new FormData();
+    formData.append('image', file);
+
+    const response = await fetch(`https://api.imgbb.com/1/upload?key=${apiKey}`, {
+        method: 'POST',
+        body: formData
     });
+    const result = await response.json();
+    if (result.success) {
+        return result.data.url;
+    } else {
+        throw new Error(result.error?.message || 'Image upload failed');
+    }
 }
 
+// ================= KYC FORM SUBMIT (IMGBB INTEGRATED) =================
 async function handleKYCUpdateSubmit(e) {
     e.preventDefault();
     
     const submitBtn = e.target.querySelector('button[type="submit"]');
     const originalBtnText = submitBtn ? submitBtn.innerHTML : '';
     
-    // HTML ফর্মের ইনপুট ফিল্ডগুলো থেকে ডেটা সংগ্রহ করা
     const fullName = document.getElementById('fullName')?.value.trim();
     const dob = document.getElementById('dob')?.value;
     const gender = document.getElementById('gender')?.value;
@@ -888,16 +895,16 @@ async function handleKYCUpdateSubmit(e) {
 
     if (submitBtn) {
         submitBtn.disabled = true;
-        submitBtn.innerHTML = `<span>Submitting KYC...</span> <i class="fa-solid fa-spinner fa-spin" style="margin-left: 8px;"></i>`;
+        submitBtn.innerHTML = `<span>Uploading to ImgBB...</span> <i class="fa-solid fa-spinner fa-spin" style="margin-left: 8px;"></i>`;
     }
 
     try {
-        showToast("Uploading KYC documents...", "info");
-        const frontUrl = await uploadImageToLink(frontFile);
-        const backUrl = await uploadImageToLink(backFile);
-        const selfieUrl = await uploadImageToLink(selfieFile);
+        const [frontUrl, backUrl, selfieUrl] = await Promise.all([
+            uploadToImgBB(frontFile),
+            uploadToImgBB(backFile),
+            uploadToImgBB(selfieFile)
+        ]);
 
-        // Supabase-এর kyc টেবিলে সব কলামসহ ডেটা পাঠানো
         const { error } = await supabaseClient
             .from('kyc')
             .upsert([
@@ -912,7 +919,7 @@ async function handleKYCUpdateSubmit(e) {
                     telegram: telegram,
                     address: address,
                     declaration_accepted: declarationAccepted,
-                    kyc_status: 'pending', // স্ট্যাটাস পেন্ডিং সেট করা হলো
+                    kyc_status: 'pending',
                     nid_front: frontUrl,
                     nid_back: backUrl,
                     nid_selfie: selfieUrl
@@ -928,7 +935,7 @@ async function handleKYCUpdateSubmit(e) {
 
         state.kycApproved = false;
         state.kycStatus = 'pending';
-        updateKYCUI(); // UI আপডেট হয়ে বাটনটি পেন্ডিং ও ডিসেবল করে দেবে
+        updateKYCUI();
         closeKYCUpdateModal();
         
         showToast("KYC submitted successfully! Waiting for admin approval.", "success");
@@ -942,15 +949,13 @@ async function handleKYCUpdateSubmit(e) {
         
     } catch (err) {
         showToast("Failed to submit KYC: " + err.message, "error");
+    } finally {
         if (submitBtn) {
             submitBtn.disabled = false;
             submitBtn.innerHTML = originalBtnText;
         }
     }
 }
-
-
-
 
 // ================= MODALS: ADD MONEY & BANK =================
 function openAddMoneyModal() { 
@@ -987,11 +992,14 @@ function calculateBDT(usdtVal) {
     bdtField.value = `৳${bdt.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
 }
 
+// ================= ADD MONEY SUBMIT (IMGBB INTEGRATED) =================
 async function handleAddMoneySubmit(e) {
     e.preventDefault();
     const trxId = document.getElementById('add-money-trxid')?.value.trim();
     const usdtVal = document.getElementById('add-money-usdt')?.value.trim();
     const screenshot = document.getElementById('add-money-screenshot')?.files[0];
+    const submitBtn = e.target.querySelector('button[type="submit"]');
+    const originalBtnText = submitBtn ? submitBtn.innerHTML : '';
 
     if (!trxId || !usdtVal || !screenshot) {
         showToast("Error: Transaction ID, USDT amount, and payment screenshot are all required fields!", "error");
@@ -1004,21 +1012,29 @@ async function handleAddMoneySubmit(e) {
         return;
     }
 
-    const bdtAmount = usdtAmount * 130;
-    const currentDate = new Date().toLocaleDateString();
-
-    const depositRequest = {
-        user_email: state.user.email || 'user@vipwallet.com',
-        user_name: state.user.name || 'USER',
-        payment_method: 'Binance',
-        trx_id: trxId,
-        usdt_amount: usdtAmount,
-        bdt_amount: bdtAmount,
-        status: 'Pending',
-        date: currentDate
-    };
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = `<span>Uploading Screenshot...</span> <i class="fa-solid fa-spinner fa-spin" style="margin-left: 8px;"></i>`;
+    }
 
     try {
+        const screenshotUrl = await uploadToImgBB(screenshot);
+
+        const bdtAmount = usdtAmount * 130;
+        const currentDate = new Date().toLocaleDateString();
+
+        const depositRequest = {
+            user_email: state.user.email || 'user@vipwallet.com',
+            user_name: state.user.name || 'USER',
+            payment_method: 'Binance',
+            trx_id: trxId,
+            usdt_amount: usdtAmount,
+            bdt_amount: bdtAmount,
+            screenshot_url: screenshotUrl,
+            status: 'Pending',
+            date: currentDate
+        };
+
         const { error: reqError } = await supabaseClient
             .from('add_money_requests')
             .insert([depositRequest]);
@@ -1046,6 +1062,11 @@ async function handleAddMoneySubmit(e) {
         if (labelField) labelField.innerHTML = '📷 Upload Payment Screenshot';
     } catch (err) {
         showToast("Failed to submit add money request: " + err.message, "error");
+    } finally {
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = originalBtnText;
+        }
     }
 }
 
@@ -1429,7 +1450,7 @@ async function processAgentDeposit(requestId, action) {
     if (!req) return;
 
     const newStatus = action === 'approve' ? 'Approved' : 'Rejected';
-    const amountToCredit = req.amount || 0;
+    const amountToCredit = req.amount || req.bdt_amount || 0;
 
     if (action === 'approve') {
         state.balance += amountToCredit;
@@ -1439,12 +1460,26 @@ async function processAgentDeposit(requestId, action) {
     }
 
     try {
-        const { error } = await supabaseClient
+        const { error: err1 } = await supabaseClient
             .from('deposit_withdraw_history')
             .update({ status: newStatus })
             .eq('id', req.id);
 
-        if (error) throw error;
+        if (err1) throw err1;
+
+        const trxId = req.trx_id || req.trxId;
+        if (trxId) {
+            await supabaseClient
+                .from('add_money_requests')
+                .update({ status: newStatus })
+                .eq('trx_id', trxId);
+
+            await supabaseClient
+                .from('add_money_history')
+                .update({ status: newStatus })
+                .eq('trx_id', trxId);
+        }
+
     } catch (err) {
         console.error("Supabase update error:", err.message);
     }
@@ -1453,10 +1488,6 @@ async function processAgentDeposit(requestId, action) {
     renderUserData();
     renderTodayTransactions();
     closeRequestModal();
-}
-
-async function processAgentWithdraw(requestId, action) {
-    processAgentDeposit(requestId, action);
 }
 
 // ================= PASSWORD CHANGE =================
@@ -1695,7 +1726,7 @@ async function handleLogout() {
     state.isLoggedIn = false;
     state.systemOnline = false;
     state.kycApproved = false;
-    state.kycStatus = 'pending';
+    state.kycStatus = 'none';
     state.balance = 0.00;
     state.totalEarnings = 0.00;
     state.user = { name: "", email: "", phone: "" };

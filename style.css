@@ -525,7 +525,7 @@ header {
     bottom: 3px;
     background-color: white;
     transition: .3s;
-    border-radius: 50%;
+    border-radius: 51%;
 }
 input:checked + .slider { background-color: #10b981; }
 input:checked + .slider:before { transform: translateX(22px); }
