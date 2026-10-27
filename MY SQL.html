@@ -1,0 +1,92 @@
+-- ১. ইউজার টেবিল
+DROP TABLE IF EXISTS users CASCADE;
+CREATE TABLE users ( 
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(), 
+    full_name text NOT NULL, 
+    email text UNIQUE NOT NULL, 
+    phone text, 
+    password text NOT NULL, 
+    balance numeric DEFAULT 0.00, 
+    income numeric DEFAULT 0.00, 
+    kyc text DEFAULT 'pending', 
+    created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) 
+); 
+
+-- ২. কেওয়াইসি (KYC) টেবিল
+DROP TABLE IF EXISTS kyc CASCADE;
+CREATE TABLE kyc (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_email text UNIQUE NOT NULL,
+    user_name text,
+    full_name VARCHAR(150),
+    dob DATE,
+    gender VARCHAR(20),
+    nationality VARCHAR(50),
+    phone VARCHAR(20),
+    telegram VARCHAR(100),
+    address TEXT,
+    declaration_accepted BOOLEAN DEFAULT TRUE,
+    kyc_status text DEFAULT 'pending',
+    nid_front text,
+    nid_back text,
+    nid_selfie text,
+    created_at timestamp with time zone DEFAULT timezone('utc'::text, now())
+);
+
+-- ৩. একীভূত অ্যাড মানি টেবিল (রিকোয়েস্ট এবং হিস্ট্রি একত্রে)
+DROP TABLE IF EXISTS add_money_transactions CASCADE; 
+CREATE TABLE add_money_transactions ( 
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(), 
+    user_email text NOT NULL, 
+    user_name text, 
+    payment_method text DEFAULT 'Binance', 
+    trx_id text NOT NULL, 
+    usdt_amount numeric NOT NULL, 
+    bdt_amount numeric NOT NULL, 
+    status text DEFAULT 'Pending', -- Pending, Approved, Rejected
+    date text, 
+    created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) 
+); 
+
+-- ৪. একীভূত ব্যাংক অ্যাকাউন্ট টেবিল (অ্যাকাউন্ট এবং হিস্ট্রি একত্রে)
+DROP TABLE IF EXISTS user_bank_accounts CASCADE; 
+CREATE TABLE user_bank_accounts ( 
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(), 
+    user_email text NOT NULL, 
+    user_name text, 
+    provider text NOT NULL, 
+    account_type text NOT NULL, 
+    account_number text NOT NULL, 
+    status text DEFAULT 'Online', -- Online, Offline
+    date text, 
+    created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) 
+); 
+
+-- ৫. একীভূত ডিপোজিট, উইথড্র এবং ট্রানজেকশন হিস্ট্রি টেবিল (রিকোয়েস্ট ও হিস্ট্রি একত্রে)
+DROP TABLE IF EXISTS deposit_withdraw_history CASCADE; 
+CREATE TABLE deposit_withdraw_history ( 
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(), 
+    user_email text NOT NULL, 
+    user_name text, 
+    type text NOT NULL, -- deposit অথবা withdraw
+    provider text NOT NULL, 
+    account_number text NOT NULL, 
+    trx_id text, 
+    usdt_amount numeric DEFAULT 0.00,
+    amount numeric NOT NULL, 
+    status text DEFAULT 'Pending', -- Pending, Approved, Rejected
+    date text, 
+    created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) 
+); 
+
+-- ৬. লাইভ সাপোর্ট চ্যাট টেবিল
+DROP TABLE IF EXISTS support_chats CASCADE; 
+CREATE TABLE support_chats ( 
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(), 
+    user_email text NOT NULL, 
+    user_name text, 
+    sender_type text NOT NULL, 
+    message text NOT NULL, 
+    status text DEFAULT 'Unread', 
+    created_at timestamp with time zone DEFAULT timezone('utc'::text, now()) 
+);

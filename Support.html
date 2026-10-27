@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Support Agent Portal - VIP Wallet</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Font - Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Supabase JS Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 min-h-screen text-slate-100 flex flex-col antialiased">
+
+    <!-- Top Header Navigation -->
+    <header class="bg-slate-800/90 backdrop-blur-md border-b border-slate-700 sticky top-0 z-50 px-4 md:px-6 py-3 flex items-center justify-between shadow-sm">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center text-white font-bold text-lg shadow-md shadow-indigo-500/30">
+                <i class="fa-solid fa-headset"></i>
+            </div>
+            <div>
+                <h1 class="font-bold text-white text-base md:text-lg leading-tight">Support Agent Portal</h1>
+                <p class="text-[11px] text-indigo-400 font-medium">Direct Database User & Chat Management</p>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-3">
+            <div class="flex items-center gap-2 border-l border-slate-700 pl-4">
+                <div class="w-9 h-9 rounded-full bg-indigo-950 text-indigo-400 border border-indigo-500/30 flex items-center justify-center font-bold text-sm">
+                    <i class="fa-solid fa-user-shield"></i>
+                </div>
+                <div class="text-left">
+                    <p class="text-xs font-semibold text-slate-200">Support Agent</p>
+                    <p class="text-[10px] text-emerald-400 font-medium flex items-center gap-1">
+                        <span class="w-2 h-2 rounded-full bg-emerald-500 inline-block animate-pulse"></span> Online
+                    </p>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Chat Dashboard Container -->
+    <main class="flex-1 p-2 md:p-6 max-w-[1600px] w-full mx-auto flex items-center justify-center">
+        <div class="bg-slate-800/95 backdrop-blur-sm rounded-2xl w-full h-[84vh] flex shadow-2xl overflow-hidden border border-slate-700">
+            
+            <!-- Left Sidebar: Users List -->
+            <div class="w-1/3 border-r border-slate-700 flex flex-col bg-slate-900/50">
+                <div class="p-4 bg-slate-800/80 border-b border-slate-700 flex items-center justify-between">
+                    <h3 class="font-bold text-slate-200 text-sm flex items-center gap-2">
+                        <i class="fa-solid fa-users text-indigo-400"></i>  Users
+                    </h3>
+                    <span id="total-users-badge" class="text-[10px] bg-indigo-950 text-indigo-300 border border-indigo-500/30 font-semibold px-2.5 py-0.5 rounded-full">Loading...</span>
+                </div>
+                
+                <div class="p-3 border-b border-slate-700 bg-slate-800/40">
+                    <input type="text" id="search-user-input" onkeyup="filterUsers()" placeholder="Search user by name or email..." class="w-full text-xs bg-slate-900 border border-slate-700 rounded-lg py-2 px-3 focus:outline-none focus:ring-1 focus:ring-indigo-500 text-slate-200">
+                </div>
+
+                <!-- Dynamic User List Container -->
+                <div id="sidebar-user-list" class="overflow-y-auto flex-1 divide-y divide-slate-800/60">
+                    <div class="p-4 text-center text-slate-400 text-xs">Loading users from database...</div>
+                </div>
+            </div>
+
+            <!-- Right Area: Chat Conversation Window -->
+            <div class="w-2/3 flex flex-col bg-slate-800/30">
+                
+                <!-- Chat Header -->
+                <div id="chat-header-area" class="p-3.5 bg-slate-800/80 border-b border-slate-700 flex justify-between items-center">
+                    <div class="flex items-center gap-3">
+                        <div class="w-9 h-9 rounded-full bg-indigo-950 text-indigo-400 border border-indigo-500/30 flex items-center justify-center font-bold">
+                            <i class="fa-solid fa-user"></i>
+                        </div>
+                        <div>
+                            <h4 id="header-user-name" class="text-xs md:text-sm font-bold text-white">Select a User</h4>
+                            <p id="header-user-email" class="text-[10px] text-slate-400">Choose a user from the left panel to start chatting</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Messages Display Box -->
+                <div id="chat-messages-box" class="flex-1 p-4 overflow-y-auto space-y-3 bg-slate-900/40 text-xs">
+                    <div class="flex flex-col items-center justify-center h-full text-slate-500 gap-2">
+                        <i class="fa-solid fa-comments text-4xl text-slate-700"></i>
+                        <p class="text-sm font-medium">Click on any user from the sidebar to view conversation</p>
+                    </div>
+                </div>
+
+                <!-- Message Input Footer with Send Button -->
+                <div id="chat-input-container" class="p-3 bg-slate-800/80 border-t border-slate-700 flex items-center gap-2 hidden">
+                    <input type="text" id="agent-message-input" placeholder="Type your reply to user..." onkeypress="handleKeyPress(event)" class="flex-1 bg-slate-900 border border-slate-700 rounded-full py-2.5 px-4 text-xs focus:outline-none focus:ring-1 focus:ring-indigo-500 text-slate-200">
+                    <button onclick="sendAgentMessage()" class="bg-indigo-600 hover:bg-indigo-500 text-white w-10 h-10 rounded-full flex items-center justify-center transition shadow-sm text-xs font-semibold shrink-0 cursor-pointer">
+                        <i class="fa-solid fa-paper-plane text-xs"></i>
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-slate-800/90 backdrop-blur-md border-t border-slate-700 py-3 text-center text-xs text-slate-400">
+        <p>&copy; 2026 Support Agent Portal | VIP Wallet Support Team</p>
+    </footer>
+
+    <!-- JavaScript Master Script Logic -->
+    <script>
+        const SUPABASE_URL = 'https://tzgipesjqsrqtwxbwkye.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_AYSEhxP9kZF03QOmQrSDrg_njl68RNf';
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        let activeUserEmail = null;
+        let activeUserName = null;
+        let globalUsersList = [];
+        let unreadMap = {};
+
+        // ১. সরাসরি users টেবিল থেকে সব ইউজার লোড করা (আপনার মাস্টার স্ক্রিপ্টের মতোই)
+        async function loadAllUsersAndChats() {
+            try {
+                // ক. users টেবিল থেকে সব ইউজারের তথ্য ফেচ করা
+                const { data: usersData, error: usersError } = await supabaseClient
+                    .from('users')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+
+                if (usersError) throw usersError;
+
+                // খ. support_chats টেবিল থেকে আনরিড মেসেজগুলো ফেচ করা
+                const { data: chatsData, error: chatsError } = await supabaseClient
+                    .from('support_chats')
+                    .select('user_email, sender_type, status')
+                    .eq('sender_type', 'users')
+                    .eq('status', 'Unread');
+
+                unreadMap = {};
+                if (chatsData) {
+                    chatsData.forEach(chat => {
+                        if (chat.user_email) {
+                            unreadMap[chat.user_email] = (unreadMap[chat.user_email] || 0) + 1;
+                        }
+                    });
+                }
+
+                globalUsersList = usersData || [];
+                document.getElementById('total-users-badge').innerText = `${globalUsersList.length} `;
+
+                renderSidebar(globalUsersList);
+            } catch (err) {
+                console.error("Load users exception:", err.message);
+                document.getElementById('sidebar-user-list').innerHTML = `<div class="p-4 text-center text-rose-400 text-xs">Error: ${err.message}</div>`;
+            }
+        }
+
+        // ২. সাইডবারে ইউজারদের রেন্ডার করা
+        function renderSidebar(users, searchFilter = '') {
+            const sidebar = document.getElementById('sidebar-user-list');
+            sidebar.innerHTML = '';
+
+            if (!users || users.length === 0) {
+                sidebar.innerHTML = `<div class="p-4 text-center text-slate-400 text-xs">No users found in database</div>`;
+                return;
+            }
+
+            let filteredUsers = users;
+            if (searchFilter) {
+                filteredUsers = users.filter(u => 
+                    (u.full_name && u.full_name.toLowerCase().includes(searchFilter)) || 
+                    (u.email && u.email.toLowerCase().includes(searchFilter)) ||
+                    (u.phone && u.phone.toLowerCase().includes(searchFilter))
+                );
+            }
+
+            if (filteredUsers.length === 0) {
+                sidebar.innerHTML = `<div class="p-4 text-center text-slate-400 text-xs">No matching user found</div>`;
+                return;
+            }
+
+            filteredUsers.forEach(user => {
+                const email = user.email;
+                const name = user.full_name || 'User';
+                const unreadCount = unreadMap[email] || 0;
+                const isActive = activeUserEmail === email ? 'bg-indigo-950/60 border-l-4 border-indigo-500' : 'hover:bg-slate-800/40';
+
+                const item = document.createElement('div');
+                item.className = `p-3 cursor-pointer flex items-center gap-3 transition ${isActive}`;
+                item.onclick = () => selectUser(email, name);
+
+                item.innerHTML = `
+                    <div class="relative">
+                        <div class="w-9 h-9 rounded-full bg-indigo-950 text-indigo-400 border border-indigo-500/30 flex items-center justify-center font-bold text-xs uppercase">
+                            ${name.charAt(0)}
+                        </div>
+                        <span class="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 border-2 border-slate-900 rounded-full"></span>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <div class="flex justify-between items-baseline">
+                            <h4 class="text-xs font-bold text-white truncate">${escapeHTML(name)}</h4>
+                        </div>
+                        <p class="text-[10px] text-slate-400 truncate">${escapeHTML(email)}</p>
+                    </div>
+                    ${unreadCount > 0 ? `<span class="bg-indigo-600 text-white font-bold text-[10px] w-5 h-5 rounded-full flex items-center justify-center shadow-sm">${unreadCount}</span>` : ''}
+                `;
+                sidebar.appendChild(item);
+            });
+        }
+
+        function filterUsers() {
+            const query = document.getElementById('search-user-input').value.toLowerCase().trim();
+            renderSidebar(globalUsersList, query);
+        }
+
+        // ৩. ইউজার সিলেক্ট করা
+        async function selectUser(email, name) {
+            activeUserEmail = email;
+            activeUserName = name;
+
+            document.getElementById('header-user-name').innerText = name;
+            document.getElementById('header-user-email').innerText = email;
+            document.getElementById('chat-input-container').classList.remove('hidden');
+
+            await markAsRead(email);
+            await fetchMessages(email);
+        }
+
+        // ৪. মেসেজ Read হিসেবে আপডেট করা
+        async function markAsRead(email) {
+            if (unreadMap[email]) {
+                unreadMap[email] = 0;
+            }
+            await supabaseClient.from('support_chats')
+                .update({ status: 'Read' })
+                .eq('user_email', email)
+                .eq('sender_type', 'user')
+                .eq('status', 'Unread');
+            
+            renderSidebar(globalUsersList, document.getElementById('search-user-input').value.toLowerCase().trim());
+        }
+
+        // ৫. নির্দিষ্ট ইউজারের মেসেজ লোড করা
+        async function fetchMessages(email) {
+            const { data, error } = await supabaseClient
+                .from('support_chats')
+                .select('*')
+                .eq('user_email', email)
+                .order('created_at', { ascending: true });
+
+            if (error) {
+                console.error('Error fetching messages:', error);
+                return;
+            }
+
+            const box = document.getElementById('chat-messages-box');
+            box.innerHTML = '';
+
+            if (data && data.length > 0) {
+                data.forEach(msg => appendBubble(msg));
+            } else {
+                box.innerHTML = `<div class="flex items-center justify-center h-full text-slate-500 text-xs">No chat history with ${email}. Type below to start conversation.</div>`;
+            }
+            scrollToBottom();
+        }
+
+        // ৬. চ্যাটবাবল রেন্ডার করা
+        function appendBubble(msg) {
+            const box = document.getElementById('chat-messages-box');
+            const isAgent = msg.sender_type === 'agent' || msg.sender_type === 'admin';
+
+            const div = document.createElement('div');
+            div.className = `flex items-end gap-2 ${isAgent ? 'justify-end' : 'justify-start'}`;
+
+            if (!isAgent) {
+                div.innerHTML = `
+                    <div class="w-6 h-6 rounded-full bg-slate-800 text-indigo-400 border border-slate-700 flex items-center justify-center text-[10px] font-bold shrink-0 mb-1 shadow-sm">
+                        <i class="fa-solid fa-user"></i>
+                    </div>
+                    <div class="bg-slate-800 p-2.5 rounded-2xl rounded-bl-sm shadow-sm max-w-[75%] text-slate-200 border border-slate-700/60">
+                        <p class="whitespace-pre-wrap break-words">${escapeHTML(msg.message)}</p>
+                    </div>
+                `;
+            } else {
+                div.innerHTML = `
+                    <div class="bg-indigo-600 text-white p-2.5 rounded-2xl rounded-br-sm shadow-sm max-w-[75%]">
+                        <p class="whitespace-pre-wrap break-words">${escapeHTML(msg.message)}</p>
+                    </div>
+                    <div class="w-6 h-6 rounded-full bg-indigo-600 text-white flex items-center justify-center text-[10px] font-bold shrink-0 mb-1 shadow-sm">
+                        <i class="fa-solid fa-headset"></i>
+                    </div>
+                `;
+            }
+
+            box.appendChild(div);
+            scrollToBottom();
+        }
+
+        function escapeHTML(str) {
+            if (!str) return '';
+            return str.replace(/[&<>'"]/g, 
+                tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag)
+            );
+        }
+
+        // ৭. এজেন্ট মেসেজ পাঠানো
+        async function sendAgentMessage() {
+            const input = document.getElementById('agent-message-input');
+            const text = input.value.trim();
+
+            if (!text || !activeUserEmail) return;
+
+            const newMsg = {
+                user_email: activeUserEmail,
+                user_name: activeUserName || 'Customer',
+                sender_type: 'agent',
+                message: text,
+                status: 'Read',
+                created_at: new Date().toISOString()
+            };
+
+            input.value = '';
+
+            const { error } = await supabaseClient.from('support_chats').insert([newMsg]);
+            if (error) {
+                alert('Failed to send message: ' + error.message);
+            } else {
+                appendBubble(newMsg);
+            }
+        }
+
+        // ৮. রিয়েলটাইম লিসেনার (নতুন মেসেজ আসলে সাথে সাথে স্ক্রিনে দেখানোর জন্য)
+        function setupRealtime() {
+            supabaseClient.channel('agent_support_portal_channel')
+                .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'support_chats' }, payload => {
+                    const msg = payload.new;
+                    
+                    if (activeUserEmail === msg.user_email && msg.sender_type === 'user') {
+                        appendBubble(msg);
+                        markAsRead(msg.user_email);
+                    } else if (msg.sender_type === 'user') {
+                        unreadMap[msg.user_email] = (unreadMap[msg.user_email] || 0) + 1;
+                        renderSidebar(globalUsersList, document.getElementById('search-user-input').value.toLowerCase().trim());
+                    }
+                })
+                .subscribe();
+        }
+
+        function scrollToBottom() {
+            const box = document.getElementById('chat-messages-box');
+            box.scrollTop = box.scrollHeight;
+        }
+
+        function handleKeyPress(e) {
+            if (e.key === 'Enter') sendAgentMessage();
+        }
+
+        // পেজ লোড হবামাত্র ডেটা ফেচ করা
+        loadAllUsersAndChats();
+        setupRealtime();
+    </script>
+</body>
+</html>

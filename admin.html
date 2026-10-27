@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Premium Admin Panel</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Font - Inter for clean typography -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Supabase JS Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        pinkbg: '#fbcfe8',
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- External CSS -->
+    <link rel="stylesheet" href="admin.css">
+</head>
+<body class="bg-gradient-to-br from-pink-100 via-pink-200 to-pink-300 min-h-screen flex flex-col antialiased">
+
+    <!-- Top Header Navigation -->
+    <header class="bg-white/80 backdrop-blur-md border-b border-pink-200 sticky top-0 z-50 px-3 md:px-6 py-3 flex items-center justify-between shadow-sm">
+        <div class="flex items-center gap-2">
+            <div class="w-8 h-8 md:w-10 md:h-10 rounded-xl bg-pink-600 flex items-center justify-center text-white font-bold text-lg shadow-md shadow-pink-300">
+                <i class="fa-solid font-bold fa-user-shield text-sm md:text-base"></i>
+            </div>
+            <div>
+                <h1 class="font-bold text-gray-800 text-sm md:text-lg leading-tight">Admin Dashboard</h1>
+                <p class="text-[10px] md:text-xs text-pink-600 font-medium">System Control Panel</p>
+            </div>
+        </div>
+
+        <!-- Search & Profile -->
+        <div class="flex items-center gap-2 md:gap-4">
+            <div class="relative hidden sm:block">
+                <input type="text" placeholder="Search here..." class="w-40 md:w-60 text-xs md:text-sm bg-pink-50/60 border border-pink-200 rounded-full py-1.5 pl-8 pr-4 focus:outline-none focus:ring-2 focus:ring-pink-400 text-gray-700">
+                <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-pink-400 text-xs"></i>
+            </div>
+
+            <button class="relative p-1.5 md:p-2 text-gray-600 hover:text-pink-600 rounded-full hover:bg-pink-100 transition">
+                <i class="fa-regular fa-bell text-sm md:text-base"></i>
+                <span class="absolute top-1 right-1 w-2 h-2 bg-pink-600 rounded-full animate-ping"></span>
+                <span class="absolute top-1 right-1 w-2 h-2 bg-pink-600 rounded-full"></span>
+            </button>
+
+            <div class="flex items-center gap-2 border-l border-pink-200 pl-2 md:pl-4">
+                <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=100" alt="Admin Avatar" class="w-7 h-7 md:w-9 md:h-9 rounded-full border-2 border-pink-400 object-cover shadow-sm">
+                <div class="hidden md:block text-left">
+                    <p class="text-xs font-semibold text-gray-800">Suman Ahmed</p>
+                    <p class="text-[10px] text-gray-500">Super Admin</p>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="flex-1 p-2 md:p-6 max-w-[1600px] w-full mx-auto space-y-4 md:space-y-6">
+
+        <!-- ================= TOP ROW 1: Requests & KYC Cards (2 Cards Grid) ================= -->
+        <section class="grid grid-cols-2 gap-2 md:gap-5">
+            
+            <!-- Card [1]: Add Money Request -->
+            <div onclick="openAdminAddMoneyModal()" class="bg-white/90 backdrop-blur-sm rounded-xl md:rounded-2xl p-2.5 md:p-5 border border-pink-200/80 shadow-sm hover:shadow-md transition duration-200 flex flex-col justify-between cursor-pointer relative">
+                <span class="absolute top-2 right-2 text-[10px] font-bold bg-pink-100 text-pink-600 px-1.5 py-0.5 rounded">[1]</span>
+                <div class="flex items-center justify-between">
+                    <span class="text-[11px] md:text-sm font-semibold text-gray-600">Add Money Request</span>
+                    <div class="w-7 h-7 md:w-10 md:h-10 rounded-lg md:rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center text-xs md:text-base">
+                        <i class="fa-solid fa-wallet"></i>
+                    </div>
+                </div>
+                <div class="mt-2 md:mt-3 flex items-baseline justify-between">
+                    <h3 id="admin-add-money-count" class="text-base md:text-3xl font-bold text-blue-600">0</h3>
+                    <span class="text-[9px] md:text-xs bg-blue-50 text-blue-700 px-1.5 md:px-2 py-0.5 rounded border border-blue-200">Pending</span>
+                </div>
+            </div>
+
+            <!-- Card [2]: KYC Verify Request -->
+            <div onclick="openAdminKYCModal()" class="bg-white/90 backdrop-blur-sm rounded-xl md:rounded-2xl p-2.5 md:p-5 border border-pink-200/80 shadow-sm hover:shadow-md transition duration-200 flex flex-col justify-between cursor-pointer relative">
+                <span class="absolute top-2 right-2 text-[10px] font-bold bg-pink-100 text-pink-600 px-1.5 py-0.5 rounded">[2]</span>
+                <div class="flex items-center justify-between">
+                    <span class="text-[11px] md:text-sm font-semibold text-gray-600">KYC Verify Request</span>
+                    <div class="w-7 h-7 md:w-10 md:h-10 rounded-lg md:rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center text-xs md:text-base">
+                        <i class="fa-solid fa-user-xmark"></i>
+                    </div>
+                </div>
+                <div class="mt-2 md:mt-3 flex items-baseline justify-between">
+                    <h3 id="admin-kyc-count" class="text-base md:text-3xl font-bold text-rose-600">0</h3>
+                    <span class="text-[9px] md:text-xs bg-rose-50 text-rose-700 px-1.5 md:px-2 py-0.5 rounded border border-rose-200">Pending</span>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- ================= TOP ROW 2: User Management Card (Single Full Width Grid Card) ================= -->
+        <section class="grid grid-cols-1 gap-2 md:gap-5">
+            <!-- Card [3]: User Management -->
+            <div onclick="openAdminUserManageModal()" class="bg-white/90 backdrop-blur-sm rounded-xl md:rounded-2xl p-3 md:p-6 border border-pink-200/80 shadow-sm hover:shadow-md transition duration-200 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 relative cursor-pointer">
+                <span class="absolute top-2 right-2 text-[10px] font-bold bg-pink-100 text-pink-600 px-1.5 py-0.5 rounded">[3]</span>
+                <div class="flex items-center gap-3 md:gap-4">
+                    <div class="w-10 h-10 md:w-14 md:h-14 rounded-xl md:rounded-2xl bg-pink-600 text-white flex items-center justify-center text-lg md:text-2xl shadow-md shadow-pink-300">
+                        <i class="fa-solid fa-users-gear"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-base md:text-xl font-bold text-gray-800">User Management</h2>
+                        <p class="text-[10px] md:text-xs text-gray-500 mt-0.5">Control user information, profile settings, and account access</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2 w-full md:w-auto justify-end">
+                    <button class="bg-pink-600 hover:bg-pink-700 text-white text-xs md:text-sm font-semibold px-5 py-2 rounded-lg transition shadow-sm flex items-center gap-2 pointer-events-none">
+                        <i class="fa-solid fa-users-cog"></i> Manage User
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= ROW 1: Overview Stats (3 Cards Grid) ================= -->
+        <section class="grid grid-cols-3 gap-2 md:gap-5">
+            
+            <!-- Card [4]: Total Users -->
+            <div class="bg-white/90 backdrop-blur-sm rounded-xl md:rounded-2xl p-2.5 md:p-5 border border-pink-200/80 shadow-sm hover:shadow-md transition duration-200 flex flex-col justify-between relative">
+                <span class="absolute top-2 right-2 text-[10px] font-bold bg-pink-100 text-pink-600 px-1.5 py-0.5 rounded">[4]</span>
+                <div class="flex items-center justify-between">
+                    <span class="text-[11px] md:text-sm font-semibold text-gray-600">Total Users</span>
+                    <div class="w-7 h-7 md:w-10 md:h-10 rounded-lg md:rounded-xl bg-pink-100 text-pink-600 flex items-center justify-center text-xs md:text-base">
+                        <i class="fa-solid fa-users"></i>
+                    </div>
+                </div>
+                <div class="mt-2 md:mt-3">
+                    <h3 id="admin-total-users" class="text-base md:text-3xl font-bold text-gray-800">0</h3>
+                    <div class="flex items-center gap-1 mt-1 text-[9px] md:text-xs text-emerald-600">
+                        <i class="fa-solid fa-arrow-up text-[8px] md:text-xs"></i>
+                        <span>Registered Users</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card [5]: Online Users -->
+            <div class="bg-white/90 backdrop-blur-sm rounded-xl md:rounded-2xl p-2.5 md:p-5 border border-pink-200/80 shadow-sm hover:shadow-md transition duration-200 flex flex-col justify-between relative">
+                <span class="absolute top-2 right-2 text-[10px] font-bold bg-pink-100 text-pink-600 px-1.5 py-0.5 rounded">[5]</span>
+                <div class="flex items-center justify-between">
+                    <span class="text-[11px] md:text-sm font-semibold text-gray-600">Online Users</span>
+                    <div class="w-7 h-7 md:w-10 md:h-10 rounded-lg md:rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center text-xs md:text-base">
+                        <i class="fa-solid fa-user-check"></i>
+                    </div>
+                </div>
+                <div class="mt-2 md:mt-3">
+                    <h3 id="admin-online-users" class="text-base md:text-3xl font-bold text-gray-800">0</h3>
+                    <div class="flex items-center gap-1 mt-1 text-[9px] md:text-xs text-emerald-600">
+                        <span class="inline-block w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                        <span>Active Balance > ৳2K</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card [6]: Offline Users -->
+            <div class="bg-white/90 backdrop-blur-sm rounded-xl md:rounded-2xl p-2.5 md:p-5 border border-pink-200/80 shadow-sm hover:shadow-md transition duration-200 flex flex-col justify-between relative">
+                <span class="absolute top-2 right-2 text-[10px] font-bold bg-pink-100 text-pink-600 px-1.5 py-0.5 rounded">[6]</span>
+                <div class="flex items-center justify-between">
+                    <span class="text-[11px] md:text-sm font-semibold text-gray-600">Offline Users</span>
+                    <div class="w-7 h-7 md:w-10 md:h-10 rounded-lg md:rounded-xl bg-gray-100 text-gray-600 flex items-center justify-center text-xs md:text-base">
+                        <i class="fa-solid fa-user-slash"></i>
+                    </div>
+                </div>
+                <div class="mt-2 md:mt-3">
+                    <h3 id="admin-offline-users" class="text-base md:text-3xl font-bold text-gray-800">0</h3>
+                    <div class="flex items-center gap-1 mt-1 text-[9px] md:text-xs text-gray-500">
+                        <i class="fa-regular fa-clock text-[8px] md:text-xs"></i>
+                        <span>Inactive Accounts</span>
+                    </div>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- ================= ROW 2: Support Team Card (1 Full Width Card) ================= -->
+        <section class="grid grid-cols-1 gap-2 md:gap-5">
+            <!-- Card [7]: Support Team -->
+            <div class="bg-white/90 backdrop-blur-sm rounded-xl md:rounded-2xl p-3 md:p-6 border border-pink-200/80 shadow-sm hover:shadow-md transition duration-200 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 relative">
+                <span class="absolute top-2 right-2 text-[10px] font-bold bg-pink-100 text-pink-600 px-1.5 py-0.5 rounded">[7]</span>
+                <div class="flex items-center gap-3 md:gap-4">
+                    <div class="w-10 h-10 md:w-14 md:h-14 rounded-xl md:rounded-2xl bg-indigo-600 text-white flex items-center justify-center text-lg md:text-2xl shadow-md shadow-indigo-300">
+                        <i class="fa-solid fa-headset"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-base md:text-xl font-bold text-gray-800">Support Team (Live Chat)</h2>
+                        <p class="text-[10px] md:text-xs text-gray-500 mt-0.5">Manage incoming live chat support messages from users</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2 w-full md:w-auto justify-end">
+                    <button onclick="openAdminSupportModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs md:text-sm font-semibold px-5 py-2 rounded-lg transition shadow-sm flex items-center gap-2 cursor-pointer">
+                        <i class="fa-solid fa-paper-plane"></i> Open Chat
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= ROW 3: Deposit & Withdraw Cards (2 Cards Grid) ================= -->
+        <section class="grid grid-cols-2 gap-2 md:gap-5">
+            
+            <!-- Card [8]: Deposit Form Trigger Card -->
+            <div onclick="openDepositModal()" class="bg-white/90 backdrop-blur-sm rounded-xl md:rounded-2xl p-2.5 md:p-5 border border-pink-200/80 shadow-sm hover:shadow-md transition duration-200 flex flex-col justify-between cursor-pointer relative">
+                <span class="absolute top-2 right-2 text-[10px] font-bold bg-pink-100 text-pink-600 px-1.5 py-0.5 rounded">[8]</span>
+                <div class="flex items-center justify-between">
+                    <span class="text-[11px] md:text-sm font-semibold text-gray-600">Deposit Form</span>
+                    <div class="w-7 h-7 md:w-10 md:h-10 rounded-lg md:rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center text-xs md:text-base">
+                        <i class="fa-solid fa-money-bill-wave"></i>
+                    </div>
+                </div>
+                <div class="mt-2 md:mt-3 flex items-baseline justify-between">
+                    <h3 class="text-xs md:text-base font-bold text-blue-600">Send Request</h3>
+                    <span class="text-[9px] md:text-xs bg-blue-50 text-blue-700 px-1.5 md:px-2 py-0.5 rounded border border-blue-200">Click to Open</span>
+                </div>
+            </div>
+
+            <!-- Card [9]: Withdraw Form Trigger Card -->
+            <div onclick="openWithdrawModal()" class="bg-white/90 backdrop-blur-sm rounded-xl md:rounded-2xl p-2.5 md:p-5 border border-pink-200/80 shadow-sm hover:shadow-md transition duration-200 flex flex-col justify-between cursor-pointer relative">
+                <span class="absolute top-2 right-2 text-[10px] font-bold bg-pink-100 text-pink-600 px-1.5 py-0.5 rounded">[9]</span>
+                <div class="flex items-center justify-between">
+                    <span class="text-[11px] md:text-sm font-semibold text-gray-600">Withdraw Form</span>
+                    <div class="w-7 h-7 md:w-10 md:h-10 rounded-lg md:rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center text-xs md:text-base">
+                        <i class="fa-solid fa-money-bill-transfer"></i>
+                    </div>
+                </div>
+                <div class="mt-2 md:mt-3 flex items-baseline justify-between">
+                    <h3 class="text-xs md:text-base font-bold text-emerald-600">Request Funds</h3>
+                    <span class="text-[9px] md:text-xs bg-emerald-50 text-emerald-700 px-1.5 md:px-2 py-0.5 rounded border border-emerald-200">Click to Open</span>
+                </div>
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- Footer Section -->
+    <footer class="bg-white/60 backdrop-blur-md border-t border-pink-200 mt-6 py-3 text-center text-[10px] md:text-xs text-gray-600">
+        <p>&copy; 2026 Admin Panel | All Rights Reserved</p>
+    </footer>
+
+    <!-- ================= MODALS FOR CHAT, DEPOSIT, WITHDRAW & USER MANAGEMENT ================= -->
+    
+    <!-- ================= CARD [1] ADD MONEY REQUEST LIST MODAL ================= -->
+    <div id="admin-add-money-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm hidden flex items-center justify-center z-50 p-2 md:p-4">
+        <div class="bg-white rounded-2xl w-full max-w-3xl h-[85vh] flex flex-col shadow-2xl overflow-hidden border border-pink-200">
+            <!-- Modal Header -->
+            <div class="p-4 bg-blue-50 border-b border-pink-200 flex justify-between items-center">
+                <h3 class="font-bold text-gray-800 text-base md:text-lg flex items-center gap-2">
+                    <i class="fa-solid fa-wallet text-blue-600"></i> Pending Add Money Requests (Binance)
+                </h3>
+                <button onclick="closeAdminAddMoneyModal()" class="text-gray-500 hover:text-red-500 font-bold text-lg px-2 cursor-pointer">✕</button>
+            </div>
+            
+            <!-- Requests List Body (Dynamic from Supabase) -->
+            <div class="flex-1 p-3 md:p-4 overflow-y-auto space-y-4 bg-slate-50">
+                <p class="text-xs text-gray-500 text-center py-6">Loading pending requests...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= CARD [2] KYC VERIFY REQUEST MODAL ================= -->
+    <div id="admin-kyc-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm hidden flex items-center justify-center z-50 p-2 md:p-4">
+        <div class="bg-white rounded-2xl w-full max-w-3xl h-[85vh] flex flex-col shadow-2xl overflow-hidden border border-pink-200">
+            <!-- Modal Header -->
+            <div class="p-4 bg-rose-50 border-b border-pink-200 flex justify-between items-center">
+                <h3 class="font-bold text-gray-800 text-base md:text-lg flex items-center gap-2">
+                    <i class="fa-solid fa-id-card text-rose-600"></i> Pending KYC Verification Requests
+                </h3>
+                <button onclick="closeAdminKYCModal()" class="text-gray-500 hover:text-red-500 font-bold text-lg px-2 cursor-pointer">✕</button>
+            </div>
+            
+            <!-- KYC List Body (Dynamic from Supabase) -->
+            <div class="flex-1 p-3 md:p-4 overflow-y-auto space-y-4 bg-slate-50">
+                <p class="text-xs text-gray-500 text-center py-6">Loading pending KYC...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- User Management Modal (Manage User List) -->
+    <div id="admin-user-manage-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm hidden flex items-center justify-center z-50 p-2 md:p-4">
+        <div class="bg-white rounded-2xl w-full max-w-3xl h-[82vh] flex flex-col shadow-2xl overflow-hidden border border-pink-200">
+            <!-- Modal Header -->
+            <div class="p-4 bg-pink-50 border-b border-pink-200 flex justify-between items-center">
+                <h3 class="font-bold text-gray-800 text-base md:text-lg flex items-center gap-2">
+                    <i class="fa-solid fa-users-gear text-pink-600"></i> All Users Management List
+                </h3>
+                <button onclick="closeAdminUserManageModal()" class="text-gray-500 hover:text-red-500 font-bold text-lg px-2 cursor-pointer">✕</button>
+            </div>
+            
+            <!-- Search Box Inside Modal -->
+            <div class="p-3 bg-gray-50 border-b border-gray-200">
+                <input type="text" placeholder="Search user by name or email..." class="w-full text-xs md:text-sm bg-white border border-gray-300 rounded-lg py-2 px-3 focus:outline-none focus:ring-2 focus:ring-pink-400 text-gray-700">
+            </div>
+
+            <!-- User List Body (Dynamic from Supabase - All Fake Users Removed) -->
+            <div class="flex-1 p-3 md:p-4 overflow-y-auto space-y-3 bg-slate-50">
+                <p class="text-xs text-gray-500 text-center py-6">Loading users...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= USER TRANSACTION HISTORY MODAL ================= -->
+    <div id="user-history-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm hidden flex items-center justify-center z-50 p-2 md:p-4">
+        <div class="bg-white rounded-2xl w-full max-w-2xl h-[75vh] flex flex-col shadow-2xl overflow-hidden border border-pink-200">
+            <!-- Header -->
+            <div class="p-4 bg-pink-50 border-b border-pink-200 flex justify-between items-center">
+                <h3 id="history-modal-title" class="font-bold text-gray-800 text-sm md:text-base flex items-center gap-2">
+                    <i class="fa-solid fa-clock-rotate-left text-pink-600"></i> Agent Transaction History
+                </h3>
+                <button onclick="closeUserHistoryModal()" class="text-gray-500 hover:text-red-500 font-bold text-lg px-2 cursor-pointer">✕</button>
+            </div>
+
+            <!-- Tab Buttons Container -->
+            <div class="flex border-b border-gray-200 bg-gray-50 p-2 gap-2">
+                <button id="btn-tab-addmoney" onclick="switchHistoryTab('addmoney')" class="flex-1 py-2 text-xs md:text-sm font-semibold rounded-lg bg-pink-600 text-white transition shadow-sm cursor-pointer">
+                    <i class="fa-solid fa-wallet mr-1"></i> Add Money History
+                </button>
+                <button id="btn-tab-depwith" onclick="switchHistoryTab('depwith')" class="flex-1 py-2 text-xs md:text-sm font-semibold rounded-lg bg-white text-gray-700 hover:bg-pink-100 transition border border-gray-200 cursor-pointer">
+                    <i class="fa-solid fa-money-bill-transfer mr-1"></i> Deposit & Withdraw History
+                </button>
+            </div>
+
+            <!-- Tab Content Body -->
+            <div class="flex-1 p-3 md:p-4 overflow-y-auto bg-slate-50">
+                <div id="content-tab-addmoney" class="space-y-2.5">
+                    <p class="text-xs text-gray-500 text-center py-4">No history found.</p>
+                </div>
+                <div id="content-tab-depwith" class="space-y-2.5 hidden">
+                    <p class="text-xs text-gray-500 text-center py-4">No history found.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Support Team Live Chat Modal (Cleaned of Fake Ashraful Islam & Bots) -->
+    <div id="admin-support-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm hidden flex items-center justify-center z-50 p-2 md:p-4">
+        <div class="bg-white rounded-2xl w-full max-w-4xl h-[82vh] flex shadow-2xl overflow-hidden border border-pink-200">
+            <!-- Left Sidebar: User List -->
+            <div class="w-1/3 border-r border-gray-200 flex flex-col bg-gray-50">
+                <div class="p-3.5 bg-indigo-50 border-b border-gray-200 flex items-center justify-between">
+                    <h3 class="font-bold text-gray-800 text-xs md:text-sm flex items-center gap-1.5">
+                        <i class="fa-solid fa-comments text-indigo-600"></i> Chats
+                    </h3>
+                    <span class="text-[10px] bg-indigo-100 text-indigo-700 font-bold px-2 py-0.5 rounded-md">0</span>
+                </div>
+                <div class="p-2 border-b border-gray-200">
+                    <input type="text" placeholder="Search..." class="w-full text-xs bg-white border border-gray-300 rounded-lg py-1.5 px-2.5 focus:outline-none focus:ring-1 focus:ring-indigo-400">
+                </div>
+                <div class="overflow-y-auto flex-1 divide-y divide-gray-100">
+                    <p class="text-xs text-gray-400 text-center p-4">No chats available.</p>
+                </div>
+            </div>
+
+            <!-- Right Area: Chat Conversation Window -->
+            <div class="w-2/3 flex flex-col bg-white">
+                <div class="p-3 bg-gray-50 border-b border-gray-200 flex justify-between items-center">
+                    <div class="flex items-center gap-2">
+                        <div class="w-7 h-7 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold text-xs">U</div>
+                        <div>
+                            <h4 class="text-xs font-bold text-gray-800">Select User</h4>
+                            <p class="text-[9px] text-emerald-600 font-medium">Online</p>
+                        </div>
+                    </div>
+                    <button onclick="closeAdminSupportModal()" class="text-gray-500 hover:text-red-500 font-bold text-base px-2 cursor-pointer">✕</button>
+                </div>
+                <div class="flex-1 p-3.5 overflow-y-auto space-y-2.5 bg-slate-50 text-xs">
+                    <p class="text-xs text-gray-400 text-center py-10">Select a user to start chatting.</p>
+                </div>
+                <div class="p-2.5 bg-white border-t border-gray-200 flex items-center gap-2">
+                    <input type="text" placeholder="Type a message..." class="flex-1 bg-gray-100 border border-transparent rounded-full py-2 px-3.5 text-xs focus:outline-none focus:bg-white focus:border-indigo-300 text-gray-700 min-w-0">
+                    <button class="bg-indigo-600 hover:bg-indigo-700 text-white px-3.5 py-2 rounded-full flex items-center gap-1 transition shadow-sm text-xs font-semibold shrink-0 cursor-pointer">
+                        <span>Send</span>
+                        <i class="fa-solid fa-paper-plane text-[10px]"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Deposit Modal -->
+    <div id="deposit-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm hidden flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-2xl w-full max-w-lg max-h-[90vh] flex flex-col shadow-2xl overflow-hidden border border-pink-200">
+            <div class="p-4 bg-blue-50 border-b border-pink-200 flex justify-between items-center">
+                <h3 class="font-bold text-gray-800 text-base md:text-lg flex items-center gap-2">
+                    <i class="fa-solid fa-money-bill-wave text-blue-600"></i> Deposit Form
+                </h3>
+                <button onclick="closeDepositModal()" class="text-gray-500 hover:text-red-500 font-bold text-lg px-2 cursor-pointer">✕</button>
+            </div>
+            <div class="p-4 md:p-6 overflow-y-auto flex-1 bg-gray-50">
+                <form id="deposit-form" class="space-y-3.5">
+                    <div>
+                        <label class="block text-[11px] md:text-xs font-semibold text-gray-700 mb-1">Select Agent</label>
+                        <select class="w-full text-xs md:text-sm bg-white border border-pink-200 rounded-lg p-2.5 focus:outline-none focus:ring-2 focus:ring-pink-400 text-gray-700">
+                            <option value="">-- Choose Agent --</option>
+                            <option value="agent1">Agent 1 (Rahim)</option>
+                            <option value="agent2">Agent 2 (Karim)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[11px] md:text-xs font-semibold text-gray-700 mb-1">Sender Number</label>
+                        <input type="text" placeholder="e.g. 017xxxxxxxx" class="w-full text-xs md:text-sm bg-white border border-pink-200 rounded-lg p-2.5 focus:outline-none focus:ring-2 focus:ring-pink-400 text-gray-700">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] md:text-xs font-semibold text-gray-700 mb-1">Transaction ID (TrxID)</label>
+                        <input type="text" placeholder="Enter transaction ID" class="w-full text-xs md:text-sm bg-white border border-pink-200 rounded-lg p-2.5 focus:outline-none focus:ring-2 focus:ring-pink-400 text-gray-700">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] md:text-xs font-semibold text-gray-700 mb-1">Amount (BDT)</label>
+                        <input type="number" placeholder="Enter amount" class="w-full text-xs md:text-sm bg-white border border-pink-200 rounded-lg p-2.5 focus:outline-none focus:ring-2 focus:ring-pink-400 text-gray-700">
+                    </div>
+                    <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white text-xs md:text-sm font-semibold py-2.5 rounded-lg transition shadow-sm mt-2 cursor-pointer">
+                        Confirm Deposit
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Withdraw Modal -->
+    <div id="withdraw-modal" class="fixed inset-0 bg-black/50 backdrop-blur-sm hidden flex items-center justify-center z-50 p-4">
+        <div class="bg-white rounded-2xl w-full max-w-lg max-h-[90vh] flex flex-col shadow-2xl overflow-hidden border border-pink-200">
+            <div class="p-4 bg-emerald-50 border-b border-pink-200 flex justify-between items-center">
+                <h3 class="font-bold text-gray-800 text-base md:text-lg flex items-center gap-2">
+                    <i class="fa-solid fa-money-bill-transfer text-emerald-600"></i> Withdraw Form
+                </h3>
+                <button onclick="closeWithdrawModal()" class="text-gray-500 hover:text-red-500 font-bold text-lg px-2 cursor-pointer">✕</button>
+            </div>
+            <div class="p-4 md:p-6 overflow-y-auto flex-1 bg-gray-50">
+                <form id="withdraw-form" class="space-y-3.5">
+                    <div>
+                        <label class="block text-[11px] md:text-xs font-semibold text-gray-700 mb-1">Select Agent</label>
+                        <select class="w-full text-xs md:text-sm bg-white border border-pink-200 rounded-lg p-2.5 focus:outline-none focus:ring-2 focus:ring-pink-400 text-gray-700">
+                            <option value="">-- Choose Agent --</option>
+                            <option value="agent1">Agent 1 (Rahim)</option>
+                            <option value="agent2">Agent 2 (Karim)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[11px] md:text-xs font-semibold text-gray-700 mb-1">Payment Method</label>
+                        <select class="w-full text-xs md:text-sm bg-white border border-pink-200 rounded-lg p-2.5 focus:outline-none focus:ring-2 focus:ring-pink-400 text-gray-700">
+                            <option value="">-- Select Method --</option>
+                            <option value="bkash">Bkash</option>
+                            <option value="nagad">Nagad</option>
+                            <option value="rocket">Rocket</option>
+                            <option value="upay">Upay</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[11px] md:text-xs font-semibold text-gray-700 mb-1">Receiver Number</label>
+                        <input type="text" placeholder="Enter your receive number" class="w-full text-xs md:text-sm bg-white border border-pink-200 rounded-lg p-2.5 focus:outline-none focus:ring-2 focus:ring-pink-400 text-gray-700">
+                    </div>
+                    <div>
+                        <label class="block text-[11px] md:text-xs font-semibold text-gray-700 mb-1">Amount (BDT)</label>
+                        <input type="number" placeholder="Enter amount" class="w-full text-xs md:text-sm bg-white border border-pink-200 rounded-lg p-2.5 focus:outline-none focus:ring-2 focus:ring-pink-400 text-gray-700">
+                    </div>
+                    <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white text-xs md:text-sm font-semibold py-2.5 rounded-lg transition shadow-sm mt-2 cursor-pointer">
+                        Confirm Withdraw
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- External JavaScript File Link -->
+    <script src="admin.js"></script>
+</body>
+</html>

@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deposit Portal - VIP Wallet</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Font - Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Supabase JS Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .toast {
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            color: white;
+            font-size: 0.8rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            animation: fadeIn 0.3s ease-in-out;
+            transition: opacity 0.3s ease;
+        }
+        .toast-success { background-color: #10b981; }
+        .toast-error { background-color: #f43f5e; }
+        .toast-info { background-color: #0284c7; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 min-h-screen text-slate-100 flex flex-col justify-between font-sans antialiased">
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col gap-2"></div>
+
+    <!-- Top Header Navigation -->
+    <header class="bg-slate-800/90 backdrop-blur-md border-b border-slate-700 sticky top-0 z-40 px-4 md:px-6 py-3 flex items-center justify-between shadow-sm">
+        <div class="flex items-center gap-3">
+            <a href="index.html" class="w-9 h-9 rounded-xl bg-slate-700 flex items-center justify-center text-slate-300 hover:text-white hover:bg-slate-600 transition">
+                <i class="fa-solid fa-arrow-left"></i>
+            </a>
+            <div>
+                <h1 class="font-bold text-white text-base md:text-lg leading-tight">Deposit Portal</h1>
+                <p class="text-[11px] text-sky-400 font-medium">Select Agent & Send Deposit Request</p>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-2">
+            <div class="w-8 h-8 rounded-lg bg-sky-600/20 border border-sky-500/30 flex items-center justify-center text-sky-400">
+                <i class="fa-solid fa-wallet text-sm"></i>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="flex-1 p-4 max-w-xl w-full mx-auto my-auto space-y-5">
+
+        <!-- Deposit Form Card -->
+        <div class="bg-slate-800/95 backdrop-blur-sm border border-slate-700 rounded-2xl p-5 md:p-6 shadow-2xl space-y-4">
+            
+            <div class="border-b border-slate-700 pb-3 flex items-center justify-between">
+                <span class="text-xs font-semibold text-slate-300">Deposit Form</span>
+                <span class="text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded-md font-medium flex items-center gap-1">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> Live Connected
+                </span>
+            </div>
+
+            <form id="user-deposit-form" onsubmit="handleUserDepositSubmit(event)" class="space-y-4">
+                
+                <!-- ১. ড্রপডাউন: শুধু এজেন্টের নাম শো করবে -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Select Agent</label>
+                    <select id="agent_select" required onchange="handleAgentSelection(this.value)" class="w-full text-xs md:text-sm bg-slate-900 border border-slate-700 rounded-xl p-3 text-slate-200 focus:outline-none focus:ring-1 focus:ring-sky-500 transition">
+                        <option value="">-- Select Agent --</option>
+                    </select>
+                </div>
+
+                <!-- সিলেক্টেড এজেন্টের বিস্তারিত তথ্য ও ব্যাংক নম্বর ডিসপ্লে বক্স -->
+                <div id="agent-account-box" class="hidden bg-slate-900/90 border border-sky-500/30 p-4 rounded-xl text-xs space-y-2.5 shadow-inner">
+                    <p class="text-sky-400 font-bold flex items-center gap-1.5 border-b border-slate-800 pb-1.5">
+                        <i class="fa-solid fa-circle-check"></i> Payment Statement of Selected Agent:
+                    </p>
+                    <div class="grid grid-cols-2 gap-2 text-slate-300">
+                        <p><strong>Agent Name:</strong> <span id="info-agent-name" class="text-sky-300 font-semibold">-</span></p>
+                        <p><strong>Phone Number:</strong> <span id="info-agent-phone" class="text-emerald-400 font-semibold">-</span></p>
+                        <p><strong>Bank:</strong> <span id="info-provider" class="text-amber-400 font-bold uppercase">-</span></p>
+                        <p><strong>Account Type:</strong> <span id="info-acc-type" class="text-purple-400 font-semibold">-</span></p>
+                    </div>
+                    <div>
+                        <p><strong>Email:</strong> <span id="info-agent-email" class="text-slate-400 font-mono">-</span></p>
+                    </div>
+
+                    <!-- এজেন্টের টোটাল ব্যালেন্স দেখার বক্স -->
+                    <div class="bg-slate-950 p-2.5 rounded-lg border border-sky-500/20 flex items-center justify-between mt-1">
+                        <div>
+                            <span class="text-[10px] text-sky-400 font-semibold block uppercase tracking-wider">Agent Total Balance:</span>
+                            <span id="info-agent-balance" class="text-emerald-400 font-mono font-bold text-sm">৳0.00</span>
+                        </div>
+                        <div class="w-7 h-7 rounded-lg bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+                            <i class="fa-solid fa-wallet text-xs"></i>
+                        </div>
+                    </div>
+                    
+                    <!-- অ্যাকাউন্ট বা বিকাশ/নগদ নম্বর -->
+                    <div class="bg-slate-950 p-2.5 rounded-lg border border-slate-800 flex items-center justify-between mt-1">
+                        <div>
+                            <span class="text-[10px] text-slate-400 block">Send Money Number:</span>
+                            <span id="info-acc-number" class="text-emerald-400 font-mono font-bold text-sm select-all">-</span>
+                        </div>
+                        <button type="button" onclick="copyAgentNumber()" class="bg-sky-600 hover:bg-sky-500 text-white px-3 py-1 rounded-md text-[10px] font-semibold transition cursor-pointer">
+                            কপি করুন
+                        </button>
+                    </div>
+                </div>
+
+                <!-- ইউজারের প্রেরক নম্বর -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Sender Number</label>
+                    <input type="text" id="sender_number" required placeholder="Sender Number (01xxxxxxxxx)" class="w-full text-xs md:text-sm bg-slate-900 border border-slate-700 rounded-xl p-3 text-slate-200 focus:outline-none focus:ring-1 focus:ring-sky-500 transition">
+                </div>
+
+                <!-- ট্রানজেকশন আইডি -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Transaction(TrxID)</label>
+                    <input type="text" id="trx_id" required placeholder="Enter TrxID from message" class="w-full text-xs md:text-sm bg-slate-900 border border-slate-700 rounded-xl p-3 text-slate-200 focus:outline-none focus:ring-1 focus:ring-sky-500 transition">
+                </div>
+
+                <!-- টাকার পরিমাণ -->
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">Amount BDT</label>
+                    <input type="number" step="0.01" id="amount" required placeholder="৳ 0.00" class="w-full text-xs md:text-sm bg-slate-900 border border-slate-700 rounded-xl p-3 text-emerald-400 font-bold focus:outline-none focus:ring-1 focus:ring-sky-500 transition">
+                </div>
+
+                <!-- সাবমিট বাটন -->
+                <button type="submit" id="submit-btn" class="w-full bg-sky-600 hover:bg-sky-500 text-white font-bold py-3.5 rounded-xl transition shadow-lg shadow-sky-600/30 text-xs md:text-sm flex items-center justify-center gap-2 cursor-pointer mt-2">
+                    <i class="fa-solid fa-paper-plane"></i>
+                    <span>ডিপোজিট রিকোয়েস্ট সাবমিট করুন</span>
+                </button>
+            </form>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-slate-800/90 backdrop-blur-md border-t border-slate-700 py-3 text-center text-xs text-slate-400">
+        <p>&copy; 2026 VIP Wallet | Agent Deposit Portal</p>
+    </footer>
+
+    <!-- Script Logic -->
+    <script>
+        const SUPABASE_URL = 'https://tzgipesjqsrqtwxbwkye.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_AYSEhxP9kZF03QOmQrSDrg_njl68RNf';
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        let agentsCombinedData = [];
+
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchAgentsAndBankDetails();
+        });
+
+        // ১. users টেবিল এবং user_bank_accounts টেবিল থেকে ডাটা একত্র করে ড্রপডাউনে শুধু নাম লোড করা
+        async function fetchAgentsAndBankDetails() {
+            const dropdown = document.getElementById('agent_select');
+            try {
+                // প্রথমে users টেবিল থেকে সব ইউজার/এজেন্টদের আনা
+                const { data: usersData, error: usersError } = await supabaseClient
+                    .from('users')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+
+                if (usersError) throw usersError;
+
+                if (!usersData || usersData.length === 0) {
+                    dropdown.innerHTML = `<option value="">-- কোনো এজেন্ট পাওয়া যায়নি --</option>`;
+                    return;
+                }
+
+                agentsCombinedData = [];
+
+                for (let user of usersData) {
+                    // প্রতিটি ইউজারের বিপরীতে user_bank_accounts টেবিল থেকে ব্যাংক/বিকাশ তথ্য ফেচ করা
+                    const { data: bankData } = await supabaseClient
+                        .from('user_bank_accounts')
+                        .select('*')
+                        .eq('user_email', user.email)
+                        .maybeSingle();
+
+                    agentsCombinedData.push({
+                        full_name: user.full_name,
+                        email: user.email,
+                        phone: user.phone || 'N/A',
+                        balance: user.balance || 0, // এজেন্টের ব্যালেন্স যোগ করা হয়েছে
+                        provider: bankData ? bankData.provider : 'Not Set',
+                        account_type: bankData ? bankData.account_type : 'N/A',
+                        account_number: bankData ? bankData.account_number : 'Not Added',
+                        status: bankData ? bankData.status : 'Offline'
+                    });
+                }
+
+                dropdown.innerHTML = `<option value="">-- Select Agent --</option>`;
+                agentsCombinedData.forEach((agent, index) => {
+                    const option = document.createElement('option');
+                    option.value = index; 
+                    // ড্রপডাউনে শুধুমাত্র এজেন্টের নাম শো করবে
+                    option.textContent = agent.full_name;
+                    dropdown.appendChild(option);
+                });
+
+            } catch (err) {
+                console.error("Fetch error:", err.message);
+                dropdown.innerHTML = `<option value="">-- ডেটা লোড করতে সমস্যা হয়েছে --</option>`;
+            }
+        }
+
+        // ২. ড্রপডাউন থেকে এজেন্ট সিলেক্ট করলে তার নাম, ফোন, ইমেইল, ব্যালেন্স এবং পেমেন্ট মেথড সহ নম্বর বক্সে দেখাবে
+        function handleAgentSelection(index) {
+            const infoBox = document.getElementById('agent-account-box');
+            if (index === "" || agentsCombinedData[index] === undefined) {
+                infoBox.classList.add('hidden');
+                return;
+            }
+
+            const agent = agentsCombinedData[index];
+            document.getElementById('info-agent-name').textContent = agent.full_name;
+            document.getElementById('info-agent-phone').textContent = agent.phone;
+            document.getElementById('info-provider').textContent = agent.provider;
+            document.getElementById('info-acc-type').textContent = agent.account_type;
+            document.getElementById('info-agent-email').textContent = agent.email;
+            document.getElementById('info-agent-balance').textContent = `৳${parseFloat(agent.balance).toLocaleString('en-US', { minimumFractionDigits: 2 })}`;
+            document.getElementById('info-acc-number').textContent = agent.account_number;
+
+            infoBox.classList.remove('hidden');
+        }
+
+        // ৩. নম্বর কপি করার ফাংশন
+        function copyAgentNumber() {
+            const num = document.getElementById('info-acc-number').innerText;
+            if (num && num !== 'Not Added' && num !== '-') {
+                navigator.clipboard.writeText(num);
+                showToast("এজেন্টের পেমেন্ট নম্বর কপি করা হয়েছে!", "success");
+            } else {
+                showToast("কোনো বৈধ নম্বর পাওয়া যায়নি!", "error");
+            }
+        }
+
+        // ৪. ডিপোজিট রিকোয়েস্ট সাবমিট করা (deposit_withdraw_history এবং add_money_transactions টেবিলে পাঠানো)
+        async function handleUserDepositSubmit(e) {
+            e.preventDefault();
+
+            const submitBtn = document.getElementById('submit-btn');
+            const selectedIndex = document.getElementById('agent_select').value;
+            const senderNumber = document.getElementById('sender_number').value.trim();
+            const trxId = document.getElementById('trx_id').value.trim();
+            const amount = parseFloat(document.getElementById('amount').value);
+
+            if (selectedIndex === "" || !senderNumber || !trxId || isNaN(amount) || amount <= 0) {
+                showToast("দয়া করে সকল তথ্য সঠিকভাবে পূরণ করুন!", "error");
+                return;
+            }
+
+            const chosenAgent = agentsCombinedData[selectedIndex];
+
+            if (chosenAgent.account_number === 'Not Added') {
+                showToast("এই এজেন্টের কোনো ব্যাংক বা বিকাশ নম্বর যুক্ত করা নেই!", "error");
+                return;
+            }
+
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> সাবমিট হচ্ছে...`;
+
+            try {
+                const currentDate = new Date().toLocaleDateString();
+                const currentTimestamp = new Date().toISOString();
+
+                // deposit_withdraw_history টেবিলে রিকোয়েস্ট ইনসার্ট (নির্দিষ্ট এজেন্টের ইমেইলসহ)
+                const depositPayload = {
+                    user_email: chosenAgent.email, 
+                    user_name: chosenAgent.full_name,
+                    type: 'deposit',
+                    provider: `${chosenAgent.provider} (${chosenAgent.account_type}) [Agent Number: ${chosenAgent.account_number}]`,
+                    account_number: senderNumber, 
+                    trx_id: trxId,
+                    usdt_amount: 0.00,
+                    amount: amount,
+                    status: 'Pending',
+                    date: currentDate,
+                    created_at: currentTimestamp
+                };
+
+                const { error: histError } = await supabaseClient
+                    .from('deposit_withdraw_history')
+                    .insert([depositPayload]);
+
+                if (histError) throw histError;
+
+                // add_money_transactions টেবিলেও রেকর্ড যুক্ত করা
+                const addMoneyPayload = {
+                    user_email: chosenAgent.email,
+                    user_name: chosenAgent.full_name,
+                    payment_method: chosenAgent.provider,
+                    trx_id: trxId,
+                    usdt_amount: 0.00,
+                    bdt_amount: amount,
+                    status: 'Pending',
+                    date: currentDate,
+                    created_at: currentTimestamp
+                };
+
+                await supabaseClient
+                    .from('add_money_transactions')
+                    .insert([addMoneyPayload]);
+
+                showToast("আপনার ডিপোজিট রিকোয়েস্ট সফলভাবে এজেন্টের কাছে জমা হয়েছে!", "success");
+                
+                // ফর্ম রিসেট
+                document.getElementById('user-deposit-form').reset();
+                document.getElementById('agent-account-box').classList.add('hidden');
+                fetchAgentsAndBankDetails();
+
+            } catch (err) {
+                console.error("Deposit submission error:", err.message);
+                showToast("রিকোয়েস্ট সাবমিট করা সম্ভব হয়নি: " + err.message, "error");
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = `<i class="fa-solid fa-paper-plane"></i> <span>ডিপোজিট রিকোয়েস্ট সাবমিট করুন</span>`;
+            }
+        }
+
+        // টোস্ট নোটিফিকেশন হেলপার
+        function showToast(message, type = "info") {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type === 'success' ? 'toast-success' : type === 'error' ? 'toast-error' : 'toast-info'}`;
+            toast.innerHTML = `<span>${message}</span><button onclick="this.parentElement.remove()" style="background:none;color:white;margin-left:0.5rem;cursor:pointer;">✕</button>`;
+            container.appendChild(toast);
+            setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 300); }, 4000);
+        }
+    </script>
+</body>
+</html>

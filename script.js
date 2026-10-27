@@ -992,17 +992,16 @@ function calculateBDT(usdtVal) {
     bdtField.value = `৳${bdt.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
 }
 
-// ================= ADD MONEY SUBMIT (IMGBB INTEGRATED) =================
+// ================= ADD MONEY SUBMIT (USING UNIFIED add_money_transactions TABLE) =================
 async function handleAddMoneySubmit(e) {
     e.preventDefault();
     const trxId = document.getElementById('add-money-trxid')?.value.trim();
     const usdtVal = document.getElementById('add-money-usdt')?.value.trim();
-    const screenshot = document.getElementById('add-money-screenshot')?.files[0];
     const submitBtn = e.target.querySelector('button[type="submit"]');
     const originalBtnText = submitBtn ? submitBtn.innerHTML : '';
 
-    if (!trxId || !usdtVal || !screenshot) {
-        showToast("Error: Transaction ID, USDT amount, and payment screenshot are all required fields!", "error");
+    if (!trxId || !usdtVal) {
+        showToast("Error: Transaction ID and USDT amount are required fields!", "error");
         return;
     }
 
@@ -1014,14 +1013,13 @@ async function handleAddMoneySubmit(e) {
 
     if (submitBtn) {
         submitBtn.disabled = true;
-        submitBtn.innerHTML = `<span>Uploading Screenshot...</span> <i class="fa-solid fa-spinner fa-spin" style="margin-left: 8px;"></i>`;
+        submitBtn.innerHTML = `<span>Submitting Request...</span> <i class="fa-solid fa-spinner fa-spin" style="margin-left: 8px;"></i>`;
     }
 
     try {
-        const screenshotUrl = await uploadToImgBB(screenshot);
-
         const bdtAmount = usdtAmount * 130;
         const currentDate = new Date().toLocaleDateString();
+        const currentTimestamp = new Date().toISOString();
 
         const depositRequest = {
             user_email: state.user.email || 'user@vipwallet.com',
@@ -1030,36 +1028,30 @@ async function handleAddMoneySubmit(e) {
             trx_id: trxId,
             usdt_amount: usdtAmount,
             bdt_amount: bdtAmount,
-            screenshot_url: screenshotUrl,
             status: 'Pending',
-            date: currentDate
+            date: currentDate,
+            created_at: currentTimestamp
         };
 
+        // একীভূত add_money_transactions টেবিলে সরাসরি রিকোয়েস্ট এবং হিস্ট্রি সেভ করা হচ্ছে
         const { error: reqError } = await supabaseClient
-            .from('add_money_requests')
+            .from('add_money_transactions')
             .insert([depositRequest]);
 
         if (reqError) throw reqError;
 
-        await supabaseClient
-            .from('add_money_history')
-            .insert([depositRequest]);
-
         closeAddMoneyModal();
         renderAddMoneyHistory();
-        showToast("Your add money request has been successfully submitted and is currently pending for admin approval.", "success");
+        showToast("Your add money request has been successfully submitted and is pending approval.", "success");
 
         const trxField = document.getElementById('add-money-trxid');
         const usdtField = document.getElementById('add-money-usdt');
         const bdtField = document.getElementById('add-money-bdt');
-        const fileField = document.getElementById('add-money-screenshot');
-        const labelField = document.getElementById('label-add-money-screenshot');
 
         if (trxField) trxField.value = '';
         if (usdtField) usdtField.value = '';
         if (bdtField) bdtField.value = '৳0';
-        if (fileField) fileField.value = '';
-        if (labelField) labelField.innerHTML = '📷 Upload Payment Screenshot';
+
     } catch (err) {
         showToast("Failed to submit add money request: " + err.message, "error");
     } finally {
@@ -1084,6 +1076,7 @@ function closeAddBankModal() {
     if (modal) modal.classList.add('hidden'); 
 }
 
+// ================= ADD BANK SUBMIT (USING UNIFIED user_bank_accounts TABLE) =================
 async function handleAddBankSubmit(e) {
     e.preventDefault();
     const provider = document.getElementById('bank-provider')?.value.trim();
@@ -1105,13 +1098,9 @@ async function handleAddBankSubmit(e) {
     const userName = state.user.name || 'USER';
 
     try {
+        // পুরোনো অ্যাকাউন্টগুলো অফলাইন করা
         await supabaseClient
-            .from('bank_accounts')
-            .update({ status: 'Offline' })
-            .eq('user_email', userEmail);
-
-        await supabaseClient
-            .from('bank_accounts_history')
+            .from('user_bank_accounts')
             .update({ status: 'Offline' })
             .eq('user_email', userEmail);
 
@@ -1125,25 +1114,12 @@ async function handleAddBankSubmit(e) {
             date: currentDate
         };
 
-        const bankHistoryData = {
-            user_email: userEmail,
-            provider: provider,
-            account_type: accType,
-            account_number: bankNumber,
-            status: 'Online',
-            date: currentDate
-        };
-
         const { data, error } = await supabaseClient
-            .from('bank_accounts')
+            .from('user_bank_accounts')
             .insert([bankAccountData])
             .select();
 
         if (error) throw error;
-
-        await supabaseClient
-            .from('bank_accounts_history')
-            .insert([bankHistoryData]);
 
         if (data && data[0]) {
             if (!state.bankHistory) state.bankHistory = [];
@@ -1198,8 +1174,9 @@ async function renderAddMoneyHistory() {
     }
 
     try {
+        // একীভূত add_money_transactions টেবিল থেকে ডেটা ফেচ করা
         const { data, error } = await supabaseClient
-            .from('add_money_history')
+            .from('add_money_transactions')
             .select('*')
             .eq('user_email', state.user.email)
             .order('id', { ascending: false });
@@ -1264,8 +1241,9 @@ async function renderAddBankHistory() {
     }
 
     try {
+        // একীভূত user_bank_accounts টেবিল থেকে ডেটা ফেচ করা
         const { data, error } = await supabaseClient
-            .from('bank_accounts_history')
+            .from('user_bank_accounts')
             .select('*')
             .eq('user_email', state.user.email)
             .order('id', { ascending: false });
@@ -1470,12 +1448,7 @@ async function processAgentDeposit(requestId, action) {
         const trxId = req.trx_id || req.trxId;
         if (trxId) {
             await supabaseClient
-                .from('add_money_requests')
-                .update({ status: newStatus })
-                .eq('trx_id', trxId);
-
-            await supabaseClient
-                .from('add_money_history')
+                .from('add_money_transactions')
                 .update({ status: newStatus })
                 .eq('trx_id', trxId);
         }
@@ -1488,6 +1461,36 @@ async function processAgentDeposit(requestId, action) {
     renderUserData();
     renderTodayTransactions();
     closeRequestModal();
+}
+
+// ================= USER DEPOSIT / WITHDRAW SUBMIT HELPER =================
+async function submitUserTransactionHistory(type, provider, accountNumber, trxId, amount) {
+    try {
+        const currentDate = new Date().toLocaleDateString();
+        const currentTimestamp = new Date().toISOString();
+
+        const historyPayload = {
+            user_email: state.user.email || 'user@vipwallet.com',
+            user_name: state.user.name || 'USER',
+            type: type, 
+            provider: provider || 'Mobile Banking',
+            account_number: accountNumber || 'N/A',
+            trx_id: trxId || null,
+            amount: parseFloat(amount),
+            status: 'Pending',
+            date: currentDate,
+            created_at: currentTimestamp
+        };
+
+        const { error } = await supabaseClient
+            .from('deposit_withdraw_history')
+            .insert([historyPayload]);
+
+        if (error) throw error;
+        console.log("Transaction history saved successfully!");
+    } catch (err) {
+        console.error("Failed to save transaction history:", err.message);
+    }
 }
 
 // ================= PASSWORD CHANGE =================
@@ -1549,7 +1552,7 @@ async function handlePasswordChangeSubmit(e) {
     }
 }
 
-// ================= LIVE SUPPORT =================
+///// ================= LIVE SUPPORT =================
 function openLiveSupportModal() {
     let supportModal = document.getElementById('live-support-modal');
 
@@ -1565,7 +1568,7 @@ function openLiveSupportModal() {
                 <h3 style="font-size: 1.125rem; font-weight: bold; color: #38bdf8; margin-bottom: 0.25rem;">💬 Live Support Team</h3>
                 <p style="font-size: 0.75rem; color: #94a3b8; margin-bottom: 0.75rem;">Send messages directly to admin or support team</p>
                 
-                <div id="chat-messages-container" style="overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 0.5rem; padding: 0.5rem; background: #0f172a; border-radius: 0.5rem; margin-bottom: 0.75rem; min-height: 200px;">
+                <div id="chat-messages-container" style="overflow-y: auto; flex: 1; display: flex; flex-direction: column; justify-content: flex-end; gap: 0.5rem; padding: 0.5rem; background: #0f172a; border-radius: 0.5rem; margin-bottom: 0.75rem; min-height: 200px; max-height: 50vh;">
                     <p style="font-size: 0.75rem; color: #64748b; text-align: center; margin: auto;">Loading messages...</p>
                 </div>
 
@@ -1605,7 +1608,8 @@ async function handleSendSupportMessage(e) {
         user_email: state.user.email,
         sender_type: 'user',
         message: msgText,
-        status: 'Unread'
+        status: 'Unread',
+        created_at: new Date().toISOString()
     };
 
     try {
@@ -1616,8 +1620,7 @@ async function handleSendSupportMessage(e) {
         if (error) throw error;
 
         if (input) input.value = '';
-        fetchChatMessages();
-        showToast("Message sent successfully!", "success");
+        await fetchChatMessages();
     } catch (err) {
         showToast("Failed to send message: " + err.message, "error");
     }
@@ -1632,7 +1635,7 @@ async function fetchChatMessages() {
             .from('support_chats')
             .select('*')
             .eq('user_email', state.user.email)
-            .order('id', { ascending: true });
+            .order('created_at', { ascending: true });
 
         if (error) throw error;
 
@@ -1641,7 +1644,7 @@ async function fetchChatMessages() {
             data.forEach(msg => {
                 const isUser = msg.sender_type === 'user';
                 const msgDiv = document.createElement('div');
-                msgDiv.style.cssText = `max-width: 80%; padding: 0.5rem 0.75rem; border-radius: 0.5rem; font-size: 0.75rem; margin-bottom: 0.25rem; ${
+                msgDiv.style.cssText = `max-width: 80%; padding: 0.5rem 0.75rem; border-radius: 0.5rem; font-size: 0.75rem; margin-bottom: 0.25rem; word-break: break-word; flex-shrink: 0; ${
                     isUser 
                     ? 'margin-left: auto; background-color: #0284c7; color: white;' 
                     : 'margin-right: auto; background-color: #334155; color: #38bdf8;'
@@ -1652,7 +1655,11 @@ async function fetchChatMessages() {
                 `;
                 container.appendChild(msgDiv);
             });
-            container.scrollTop = container.scrollHeight;
+            
+            setTimeout(() => {
+                container.scrollTop = container.scrollHeight;
+            }, 50);
+
         } else {
             container.innerHTML = `<p style="font-size: 0.75rem; color: #64748b; text-align: center; margin: auto;">No messages found. Start sending messages...</p>`;
         }
